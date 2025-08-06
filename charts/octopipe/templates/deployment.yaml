@@ -40,6 +40,7 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           command:
+            - ./octopipe
             - --host=0.0.0.0
       {{- with .Values.nodeSelector }}
       nodeSelector:
