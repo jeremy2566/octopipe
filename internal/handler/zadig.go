@@ -203,6 +203,7 @@ func (h Handler) AddServices(namespace string, servicesMap map[string]string) er
 			zap.Int("status_code", resp.StatusCode()),
 			zap.String("response body", resp.String()),
 		)
+		return fmt.Errorf(resp.String())
 	}
 
 	return nil
