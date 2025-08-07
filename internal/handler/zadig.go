@@ -173,27 +173,54 @@ type AddServiceList struct {
 	ServiceName string `json:"service_name"`
 }
 
-func (h Handler) AddServices(namespace string, servicesMap map[string]string) error {
-	h.log.Info("add services", zap.String("namespace", namespace), zap.Any("servicesMap", servicesMap))
+type UtilsFun struct {
+	ReplacePolicy string                `json:"replacePolicy"`
+	EnvNames      []string              `json:"envNames"`
+	ChartValues   []UtilsFunChartValues `json:"chartValues"`
+}
 
-	var services []AddServiceList
-	for sn := range servicesMap {
-		add := AddServiceList{ServiceName: sn}
-		services = append(services, add)
+type UtilsFunChartValues struct {
+	EnvName         string `json:"envName"`
+	ServiceName     string `json:"serviceName"`
+	ReleaseName     string `json:"releaseName"`
+	ChartVersion    string `json:"chartVersion"`
+	Deploy_strategy string `json:"deploy_strategy"`
+}
+
+func (h Handler) AddServices(namespace, serviceName, branchName string) error {
+	h.log.Info("add services", zap.String("namespace", namespace), zap.String("serviceName", serviceName), zap.String("branchName", branchName))
+	charts := h.GetServiceCharts()
+	chartVersion, exist := charts[serviceName]
+	if !exist {
+		h.log.Warn("service not found", zap.String("service", serviceName))
+		return fmt.Errorf("service not found")
 	}
-	req := AddService{
-		EnvKey:   namespace,
-		Services: services,
+	ufcv := []UtilsFunChartValues{
+		{
+			EnvName:         namespace,
+			ServiceName:     serviceName,
+			ReleaseName:     serviceName,
+			ChartVersion:    chartVersion,
+			Deploy_strategy: "deploy",
+		},
 	}
-	apiResponse := struct {
-		Message string `json:"message"`
-	}{}
+	uf := UtilsFun{
+		ReplacePolicy: "notUseEnvImage",
+		EnvNames:      []string{namespace},
+		ChartValues:   ufcv,
+	}
+
+	var apiResponse []struct {
+		EnvName    string `json:"env_name"`
+		Status     string `json:"status"`
+		ErrMessage string `json:"err_message"`
+	}
 	resp, err := h.client.R().
 		SetResult(&apiResponse).
 		SetContentType("application/json").
 		SetAuthToken("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiamVyZW15MjU2NiIsImVtYWlsIjoiamVyZW15LnpoYW5nQHN0b3JlaHViLmNvbSIsInVpZCI6Ijk3ODgyYzVmLWEyNjYtMTFlZi1hYTlmLTAyMDU4ZWVlYTIzNSIsInByZWZlcnJlZF91c2VybmFtZSI6ImplcmVteTI1NjYiLCJmZWRlcmF0ZWRfY2xhaW1zIjp7ImNvbm5lY3Rvcl9pZCI6ImdpdGh1YiIsInVzZXJfaWQiOiJqZXJlbXkyNTY2In0sImF1ZCI6InphZGlnIiwiZXhwIjo0ODg1MTc0NzMwfQ.pZ_jVTj20h_R9Z84O3_QJL2OcUxzJn04gNkDIATRsf4").
-		SetBody(req).
-		Post("https://zadigx.shub.us/openapi/environments/service/yaml?projectKey=fat-base-envrionment")
+		SetBody(uf).
+		Put("https://zadigx.shub.us/api/aslan/environment/environments?type=helm&projectName=fat-base-envrionment")
 
 	if err != nil {
 		h.log.Warn("failed to fetch environments", zap.Error(err))

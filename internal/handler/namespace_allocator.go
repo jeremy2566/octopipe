@@ -50,14 +50,14 @@ func (h Handler) handleFeature(req NamespaceAllocatorReq) {
 	if ns, b := c.Get(bn); b {
 		h.log.Info("cache hit, deploying to namespace", zap.String("branch_name", bn), zap.String("ns", ns))
 		// 增加服务
-		err := h.AddServices(ns, map[string]string{req.ServiceName: req.BranchName})
+		err := h.AddServices(ns, req.ServiceName, req.BranchName)
 		if err != nil {
 			h.log.Error("add services failed",
 				zap.String("service", req.ServiceName),
 				zap.String("branch", req.BranchName),
 				zap.Error(err),
 			)
-			h.Notify(fmt.Sprintf("service[%s] add failed. msg: %s", req.ServiceName, err.Error()))
+			h.Notify(fmt.Sprintf("namespace[%s] service[%s] add failed. msg: %s", ns, req.ServiceName, err.Error()))
 			return
 		}
 		// 部署服务
@@ -68,9 +68,9 @@ func (h Handler) handleFeature(req NamespaceAllocatorReq) {
 				zap.String("branch", req.BranchName),
 				zap.Error(err),
 			)
-			h.Notify(fmt.Sprintf("service[%s] deploy failed.", req.ServiceName))
+			h.Notify(fmt.Sprintf("namespace[%s] service[%s] deploy failed.", ns, req.ServiceName))
 		}
-		h.Notify(fmt.Sprintf("service[%s] deploy succeeded.", req.ServiceName))
+		h.Notify(fmt.Sprintf("namespace[%s] service[%s] deploy succeeded.", ns, req.ServiceName))
 	} else {
 		h.log.Info("cache miss", zap.String("branch_name", bn))
 		// 挑选一个 ns
