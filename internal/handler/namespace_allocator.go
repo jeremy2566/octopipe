@@ -49,8 +49,17 @@ func (h Handler) handleFeature(req NamespaceAllocatorReq) {
 	h.log.Info("handle feature", zap.String("service_name", req.ServiceName), zap.String("branch_name", bn))
 	if ns, b := c.Get(bn); b {
 		h.log.Info("cache hit, deploying to namespace", zap.String("branch_name", bn), zap.String("ns", ns))
-		// 增加服务部署
-		err := h.DeployServices(ns, map[string]string{req.ServiceName: req.BranchName})
+		// 增加服务
+		err := h.AddServices(ns, map[string]string{req.ServiceName: req.BranchName})
+		if err != nil {
+			h.log.Error("add services failed",
+				zap.String("service", req.ServiceName),
+				zap.String("branch", req.BranchName),
+				zap.Error(err),
+			)
+		}
+		// 部署服务
+		err = h.DeployServices(ns, map[string]string{req.ServiceName: req.BranchName})
 		if err != nil {
 			h.log.Error("deploy services failed",
 				zap.String("service", req.ServiceName),

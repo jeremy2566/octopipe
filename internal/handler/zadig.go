@@ -164,13 +164,48 @@ func (h Handler) GetServiceCharts() map[string]string {
 	return ret
 }
 
-type UtilsFun struct {
-	Env_key      string                 `json:"env_key"`
-	Service_list []UtilsFunService_list `json:"service_list"`
+type AddService struct {
+	EnvKey   string           `json:"env_key"`
+	Services []AddServiceList `json:"service_list"`
 }
 
-type UtilsFunService_list struct {
-	Service_name string `json:"service_name"`
+type AddServiceList struct {
+	ServiceName string `json:"service_name"`
+}
+
+func (h Handler) AddServices(namespace string, servicesMap map[string]string) error {
+	h.log.Info("add services", zap.String("namespace", namespace), zap.Any("servicesMap", servicesMap))
+
+	var services []AddServiceList
+	for sn := range servicesMap {
+		add := AddServiceList{ServiceName: sn}
+		services = append(services, add)
+	}
+	req := AddService{
+		EnvKey:   namespace,
+		Services: services,
+	}
+	apiResponse := struct {
+		Message string `json:"message"`
+	}{}
+	resp, err := h.client.R().
+		SetResult(&apiResponse).
+		SetContentType("application/json").
+		SetAuthToken("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiamVyZW15MjU2NiIsImVtYWlsIjoiamVyZW15LnpoYW5nQHN0b3JlaHViLmNvbSIsInVpZCI6Ijk3ODgyYzVmLWEyNjYtMTFlZi1hYTlmLTAyMDU4ZWVlYTIzNSIsInByZWZlcnJlZF91c2VybmFtZSI6ImplcmVteTI1NjYiLCJmZWRlcmF0ZWRfY2xhaW1zIjp7ImNvbm5lY3Rvcl9pZCI6ImdpdGh1YiIsInVzZXJfaWQiOiJqZXJlbXkyNTY2In0sImF1ZCI6InphZGlnIiwiZXhwIjo0ODg1MTc0NzMwfQ.pZ_jVTj20h_R9Z84O3_QJL2OcUxzJn04gNkDIATRsf4").
+		SetBody(req).
+		Post("https://zadigx.shub.us/openapi/environments/service/yaml?projectKey=fat-base-envrionment")
+
+	if err != nil {
+		h.log.Warn("failed to fetch environments", zap.Error(err))
+	}
+	if resp.StatusCode() != http.StatusOK {
+		h.log.Warn("resp status code not ok",
+			zap.Int("status_code", resp.StatusCode()),
+			zap.String("response body", resp.String()),
+		)
+	}
+
+	return nil
 }
 
 func (h Handler) DeployServices(namespace string, servicesMap map[string]string) error {
