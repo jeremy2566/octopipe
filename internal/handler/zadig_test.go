@@ -222,7 +222,7 @@ func TestHandler_DeployService(t *testing.T) {
 		log:    zap.NewNop(),
 		client: resty.New(),
 	}
-	taskId, err := h.DeployService("test4", "auth-api", "WB-9297")
+	taskId, err := h.DeployService("test15", "auth-api", "master")
 	if err != nil {
 		t.Error(err)
 	}

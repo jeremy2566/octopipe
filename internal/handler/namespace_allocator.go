@@ -87,9 +87,9 @@ func (h Handler) handleFeature(req NamespaceAllocatorReq) {
 		}
 
 		// 初次部署服务
-		_, err = h.DeployService(ns, "backoffice-v1-web-app", "master")
+		_, err = h.DeployService(ns, "backoffice-v1-web", "master")
 		if err != nil {
-			h.log.Error("deploy backoffice-v1-web-app services failed",
+			h.log.Error("deploy backoffice-v1-web services failed",
 				zap.Error(err),
 			)
 			h.Notify(fmt.Sprintf("namespace[%s] backoffice-v1-web-app deploy failed.", ns))

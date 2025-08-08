@@ -291,6 +291,7 @@ func (h Handler) DeployService(namespace, serviceName, branchName string) (int, 
 		zap.String("serviceName", serviceName),
 		zap.String("branchName", branchName),
 	)
+	sn, sm, rn, bn := trans(serviceName)
 	req := DeployServicesReq{
 		Name:        "test33",
 		DisplayName: "fat-base-workflow",
@@ -423,8 +424,8 @@ func (h Handler) DeployService(namespace, serviceName, branchName string) (int, 
 								} `json:"repos"`
 							}{
 								{
-									ServiceName:   serviceName,
-									ServiceModule: serviceName,
+									ServiceName:   sn,
+									ServiceModule: sm,
 									Repos: []struct {
 										Source        string `json:"source"`
 										RepoOwner     string `json:"repo_owner"`
@@ -438,7 +439,7 @@ func (h Handler) DeployService(namespace, serviceName, branchName string) (int, 
 											Source:        "github",
 											RepoOwner:     "storehubnet",
 											RepoNamespace: "storehubnet",
-											RepoName:      serviceName,
+											RepoName:      rn,
 											RemoteName:    "origin",
 											Branch:        branchName,
 											CodehostID:    6,
@@ -461,9 +462,9 @@ func (h Handler) DeployService(namespace, serviceName, branchName string) (int, 
 								} `json:"repos"`
 							}{
 								{
-									ServiceName:   serviceName,
-									ServiceModule: serviceName,
-									BuildName:     fmt.Sprintf("fat-base-envrionment-build-%s-1", serviceName),
+									ServiceName:   sn,
+									ServiceModule: sm,
+									BuildName:     fmt.Sprintf("fat-base-envrionment-build-%s-1", bn),
 									Repos: []struct {
 										Source        string `json:"source"`
 										RepoOwner     string `json:"repo_owner"`
@@ -477,7 +478,7 @@ func (h Handler) DeployService(namespace, serviceName, branchName string) (int, 
 											Source:        "github",
 											RepoOwner:     "storehubnet",
 											RepoNamespace: "storehubnet",
-											RepoName:      serviceName,
+											RepoName:      rn,
 											RemoteName:    "origin",
 											Branch:        branchName,
 											CodehostID:    6,
@@ -515,4 +516,14 @@ func (h Handler) DeployService(namespace, serviceName, branchName string) (int, 
 		return -1, fmt.Errorf("deploy srv status code not 200: %w", err)
 	}
 	return ret.TaskID, nil
+}
+
+// trans 服务名转 service name, service module, repo name 和 build name
+func trans(serviceName string) (string, string, string, string) {
+	switch serviceName {
+	case "backoffice-v1-web":
+		return "backoffice-v1-web-app", "backoffice-v1-web", "backoffice-v1-web", "backoffice-v1-web"
+	default:
+		return serviceName, serviceName, serviceName, serviceName
+	}
 }
