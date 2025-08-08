@@ -61,7 +61,7 @@ func (h Handler) handleFeature(req NamespaceAllocatorReq) {
 			return
 		}
 		// 部署服务
-		err = h.DeployServices(ns, map[string]string{req.ServiceName: req.BranchName})
+		taskId, err := h.DeployService(ns, req.ServiceName, req.BranchName)
 		if err != nil {
 			h.log.Error("deploy services failed",
 				zap.String("service", req.ServiceName),
@@ -70,7 +70,7 @@ func (h Handler) handleFeature(req NamespaceAllocatorReq) {
 			)
 			h.Notify(fmt.Sprintf("namespace[%s] service[%s] deploy failed.", ns, req.ServiceName))
 		}
-		h.Notify(fmt.Sprintf("namespace[%s] service[%s] deploy succeeded.", ns, req.ServiceName))
+		h.Notify(fmt.Sprintf("namespace[%s] service[%s] deploy succeeded. task id = %d", ns, req.ServiceName, taskId))
 	} else {
 		h.log.Info("cache miss", zap.String("branch_name", bn))
 		// 挑选一个 ns
@@ -87,20 +87,26 @@ func (h Handler) handleFeature(req NamespaceAllocatorReq) {
 		}
 
 		// 初次部署服务
-		srvMap := map[string]string{
-			"backoffice-v1-web-app": "master",
-			req.ServiceName:         req.BranchName,
-		}
-		err = h.DeployServices(ns, srvMap)
+		_, err = h.DeployService(ns, "backoffice-v1-web-app", "master")
 		if err != nil {
-			h.log.Error("deploy services failed",
-				zap.Any("services", []string{"redis-backoffice", "redis-general", "backoffice-v1-web-app", "bo-v1-assets", req.ServiceName}),
+			h.log.Error("deploy backoffice-v1-web-app services failed",
 				zap.Error(err),
 			)
-			h.Notify(fmt.Sprintf("namespace[%s] created failed.", ns))
+			h.Notify(fmt.Sprintf("namespace[%s] backoffice-v1-web-app deploy failed.", ns))
+			return
+		}
+		taskId, err := h.DeployService(ns, req.ServiceName, req.BranchName)
+		if err != nil {
+			h.log.Error("deploy services failed",
+				zap.String("service", req.ServiceName),
+				zap.String("branch", req.BranchName),
+				zap.Error(err),
+			)
+			h.Notify(fmt.Sprintf("namespace[%s] %s failed.", ns, req.BranchName))
+			return
 		}
 
-		h.Notify(fmt.Sprintf("namespace[%s] created succeeded.", ns))
+		h.Notify(fmt.Sprintf("namespace[%s] created succeeded. task id = %d", ns, taskId))
 	}
 }
 

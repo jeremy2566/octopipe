@@ -29,12 +29,14 @@ func (h Handler) GetZadigNamespace(projectKey string) []env {
 		Get("https://zadigx.shub.us/openapi/environments")
 	if err != nil {
 		h.log.Warn("failed to fetch environments", zap.Error(err))
+		return nil
 	}
 	if resp.StatusCode() != http.StatusOK {
 		h.log.Warn("resp status code not ok",
 			zap.Int("status_code", resp.StatusCode()),
 			zap.String("response body", resp.String()),
 		)
+		return nil
 	}
 
 	return envs
@@ -230,14 +232,287 @@ func (h Handler) AddServices(namespace, serviceName, branchName string) error {
 			zap.Int("status_code", resp.StatusCode()),
 			zap.String("response body", resp.String()),
 		)
-		return fmt.Errorf(resp.String())
+		//return fmt.Errorf(resp.String())
 	}
 
 	return nil
 }
 
-func (h Handler) DeployServices(namespace string, servicesMap map[string]string) error {
-	h.log.Info("deploy services", zap.String("namespace", namespace), zap.Any("servicesMap", servicesMap))
-	// TODO 部署服务
-	return nil
+type DeployServicesReq struct {
+	Name        string `json:"name"`
+	DisplayName string `json:"display_name"`
+	Params      []struct {
+		Name  string `json:"name"`
+		Type  string `json:"type"`
+		Value string `json:"value"`
+	} `json:"params"`
+	Stages []struct {
+		Name string `json:"name"`
+		Jobs []struct {
+			Name string `json:"name"`
+			Type string `json:"type"`
+			Spec struct {
+				DefaultServiceAndBuilds []struct {
+					ServiceName   string `json:"service_name"`
+					ServiceModule string `json:"service_module"`
+					Repos         []struct {
+						Source        string `json:"source"`
+						RepoOwner     string `json:"repo_owner"`
+						RepoNamespace string `json:"repo_namespace"`
+						RepoName      string `json:"repo_name"`
+						RemoteName    string `json:"remote_name"`
+						Branch        string `json:"branch"`
+						CodehostID    int    `json:"codehost_id"`
+					} `json:"repos"`
+				} `json:"default_service_and_builds"`
+				ServiceAndBuilds []struct {
+					ServiceName   string `json:"service_name"`
+					ServiceModule string `json:"service_module"`
+					BuildName     string `json:"build_name"`
+					Repos         []struct {
+						Source        string `json:"source"`
+						RepoOwner     string `json:"repo_owner"`
+						RepoNamespace string `json:"repo_namespace"`
+						RepoName      string `json:"repo_name"`
+						RemoteName    string `json:"remote_name"`
+						Branch        string `json:"branch"`
+						CodehostID    int    `json:"codehost_id"`
+					} `json:"repos"`
+				} `json:"service_and_builds"`
+			} `json:"spec"`
+		} `json:"jobs"`
+	} `json:"stages"`
+	Project string `json:"project"`
+}
+
+func (h Handler) DeployService(namespace, serviceName, branchName string) (int, error) {
+	h.log.Info("deploy services",
+		zap.String("namespace", namespace),
+		zap.String("serviceName", serviceName),
+		zap.String("branchName", branchName),
+	)
+	req := DeployServicesReq{
+		Name:        "test33",
+		DisplayName: "fat-base-workflow",
+		Project:     "fat-base-envrionment",
+		Params: []struct {
+			Name  string `json:"name"`
+			Type  string `json:"type"`
+			Value string `json:"value"`
+		}{
+			{
+				Name:  "环境",
+				Type:  "choice",
+				Value: namespace,
+			},
+		},
+		Stages: []struct {
+			Name string `json:"name"`
+			Jobs []struct {
+				Name string `json:"name"`
+				Type string `json:"type"`
+				Spec struct {
+					DefaultServiceAndBuilds []struct {
+						ServiceName   string `json:"service_name"`
+						ServiceModule string `json:"service_module"`
+						Repos         []struct {
+							Source        string `json:"source"`
+							RepoOwner     string `json:"repo_owner"`
+							RepoNamespace string `json:"repo_namespace"`
+							RepoName      string `json:"repo_name"`
+							RemoteName    string `json:"remote_name"`
+							Branch        string `json:"branch"`
+							CodehostID    int    `json:"codehost_id"`
+						} `json:"repos"`
+					} `json:"default_service_and_builds"`
+					ServiceAndBuilds []struct {
+						ServiceName   string `json:"service_name"`
+						ServiceModule string `json:"service_module"`
+						BuildName     string `json:"build_name"`
+						Repos         []struct {
+							Source        string `json:"source"`
+							RepoOwner     string `json:"repo_owner"`
+							RepoNamespace string `json:"repo_namespace"`
+							RepoName      string `json:"repo_name"`
+							RemoteName    string `json:"remote_name"`
+							Branch        string `json:"branch"`
+							CodehostID    int    `json:"codehost_id"`
+						} `json:"repos"`
+					} `json:"service_and_builds"`
+				} `json:"spec"`
+			} `json:"jobs"`
+		}{
+			{
+				Name: "构建",
+				Jobs: []struct {
+					Name string `json:"name"`
+					Type string `json:"type"`
+					Spec struct {
+						DefaultServiceAndBuilds []struct {
+							ServiceName   string `json:"service_name"`
+							ServiceModule string `json:"service_module"`
+							Repos         []struct {
+								Source        string `json:"source"`
+								RepoOwner     string `json:"repo_owner"`
+								RepoNamespace string `json:"repo_namespace"`
+								RepoName      string `json:"repo_name"`
+								RemoteName    string `json:"remote_name"`
+								Branch        string `json:"branch"`
+								CodehostID    int    `json:"codehost_id"`
+							} `json:"repos"`
+						} `json:"default_service_and_builds"`
+						ServiceAndBuilds []struct {
+							ServiceName   string `json:"service_name"`
+							ServiceModule string `json:"service_module"`
+							BuildName     string `json:"build_name"`
+							Repos         []struct {
+								Source        string `json:"source"`
+								RepoOwner     string `json:"repo_owner"`
+								RepoNamespace string `json:"repo_namespace"`
+								RepoName      string `json:"repo_name"`
+								RemoteName    string `json:"remote_name"`
+								Branch        string `json:"branch"`
+								CodehostID    int    `json:"codehost_id"`
+							} `json:"repos"`
+						} `json:"service_and_builds"`
+					} `json:"spec"`
+				}{
+					{
+						Name: "构建发布",
+						Type: "zadig-build",
+						Spec: struct {
+							DefaultServiceAndBuilds []struct {
+								ServiceName   string `json:"service_name"`
+								ServiceModule string `json:"service_module"`
+								Repos         []struct {
+									Source        string `json:"source"`
+									RepoOwner     string `json:"repo_owner"`
+									RepoNamespace string `json:"repo_namespace"`
+									RepoName      string `json:"repo_name"`
+									RemoteName    string `json:"remote_name"`
+									Branch        string `json:"branch"`
+									CodehostID    int    `json:"codehost_id"`
+								} `json:"repos"`
+							} `json:"default_service_and_builds"`
+							ServiceAndBuilds []struct {
+								ServiceName   string `json:"service_name"`
+								ServiceModule string `json:"service_module"`
+								BuildName     string `json:"build_name"`
+								Repos         []struct {
+									Source        string `json:"source"`
+									RepoOwner     string `json:"repo_owner"`
+									RepoNamespace string `json:"repo_namespace"`
+									RepoName      string `json:"repo_name"`
+									RemoteName    string `json:"remote_name"`
+									Branch        string `json:"branch"`
+									CodehostID    int    `json:"codehost_id"`
+								} `json:"repos"`
+							} `json:"service_and_builds"`
+						}{
+							DefaultServiceAndBuilds: []struct {
+								ServiceName   string `json:"service_name"`
+								ServiceModule string `json:"service_module"`
+								Repos         []struct {
+									Source        string `json:"source"`
+									RepoOwner     string `json:"repo_owner"`
+									RepoNamespace string `json:"repo_namespace"`
+									RepoName      string `json:"repo_name"`
+									RemoteName    string `json:"remote_name"`
+									Branch        string `json:"branch"`
+									CodehostID    int    `json:"codehost_id"`
+								} `json:"repos"`
+							}{
+								{
+									ServiceName:   serviceName,
+									ServiceModule: serviceName,
+									Repos: []struct {
+										Source        string `json:"source"`
+										RepoOwner     string `json:"repo_owner"`
+										RepoNamespace string `json:"repo_namespace"`
+										RepoName      string `json:"repo_name"`
+										RemoteName    string `json:"remote_name"`
+										Branch        string `json:"branch"`
+										CodehostID    int    `json:"codehost_id"`
+									}{
+										{
+											Source:        "github",
+											RepoOwner:     "storehubnet",
+											RepoNamespace: "storehubnet",
+											RepoName:      serviceName,
+											RemoteName:    "origin",
+											Branch:        branchName,
+											CodehostID:    6,
+										},
+									},
+								},
+							},
+							ServiceAndBuilds: []struct {
+								ServiceName   string `json:"service_name"`
+								ServiceModule string `json:"service_module"`
+								BuildName     string `json:"build_name"`
+								Repos         []struct {
+									Source        string `json:"source"`
+									RepoOwner     string `json:"repo_owner"`
+									RepoNamespace string `json:"repo_namespace"`
+									RepoName      string `json:"repo_name"`
+									RemoteName    string `json:"remote_name"`
+									Branch        string `json:"branch"`
+									CodehostID    int    `json:"codehost_id"`
+								} `json:"repos"`
+							}{
+								{
+									ServiceName:   serviceName,
+									ServiceModule: serviceName,
+									BuildName:     fmt.Sprintf("fat-base-envrionment-build-%s-1", serviceName),
+									Repos: []struct {
+										Source        string `json:"source"`
+										RepoOwner     string `json:"repo_owner"`
+										RepoNamespace string `json:"repo_namespace"`
+										RepoName      string `json:"repo_name"`
+										RemoteName    string `json:"remote_name"`
+										Branch        string `json:"branch"`
+										CodehostID    int    `json:"codehost_id"`
+									}{
+										{
+											Source:        "github",
+											RepoOwner:     "storehubnet",
+											RepoNamespace: "storehubnet",
+											RepoName:      serviceName,
+											RemoteName:    "origin",
+											Branch:        branchName,
+											CodehostID:    6,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	ret := struct {
+		ProjectName  string `json:"project_name"`
+		WorkflowName string `json:"workflow_name"`
+		TaskID       int    `json:"task_id"`
+	}{}
+	resp, err := h.client.R().
+		SetResult(&ret).
+		SetContentType("application/json").
+		SetAuthToken("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiamVyZW15MjU2NiIsImVtYWlsIjoiamVyZW15LnpoYW5nQHN0b3JlaHViLmNvbSIsInVpZCI6Ijk3ODgyYzVmLWEyNjYtMTFlZi1hYTlmLTAyMDU4ZWVlYTIzNSIsInByZWZlcnJlZF91c2VybmFtZSI6ImplcmVteTI1NjYiLCJmZWRlcmF0ZWRfY2xhaW1zIjp7ImNvbm5lY3Rvcl9pZCI6ImdpdGh1YiIsInVzZXJfaWQiOiJqZXJlbXkyNTY2In0sImF1ZCI6InphZGlnIiwiZXhwIjo0ODg1MTc0NzMwfQ.pZ_jVTj20h_R9Z84O3_QJL2OcUxzJn04gNkDIATRsf4").
+		SetBody(req).
+		Post("https://zadigx.shub.us/api/aslan/workflow/v4/workflowtask?projectName=fat-base-envrionment")
+	if err != nil {
+		h.log.Warn("deploy srv err.", zap.Error(err))
+		return -1, fmt.Errorf("deploy srv err: %w", err)
+	}
+	if resp.StatusCode() != http.StatusOK {
+		h.log.Warn("resp status code not ok",
+			zap.Int("status_code", resp.StatusCode()),
+			zap.String("response body", resp.String()),
+		)
+		return -1, fmt.Errorf("deploy srv status code not 200: %w", err)
+	}
+	return ret.TaskID, nil
 }
