@@ -12,10 +12,6 @@ on:
         description: '相关的分支名称'
         required: true
         type: string
-    # 允许调用方传入一个名为 OCTOPIPE_API_TOKEN 的 secret
-    secrets:
-      OCTOPIPE_API_TOKEN:
-        required: true
 
   # 允许此工作流从 Actions 标签页手动触发
   workflow_dispatch:
@@ -42,8 +38,7 @@ jobs:
       - name: Perform HTTP Call
         run: |
           # 使用 secret 进行认证，并使用 inputs 构建请求体
-          curl --location --request POST 'https://octopipe.k8s.shub.us/namespace_allocator' \
-          --header 'Authorization: Bearer ${{ secrets.OCTOPIPE_API_TOKEN }}' \
+          curl -v --location --request POST 'https://octopipe.k8s.shub.us/namespace_allocator' \
           --header 'Content-Type: application/json' \
           --data-raw '{
               "service_name": "${{ inputs.service_name }}",
