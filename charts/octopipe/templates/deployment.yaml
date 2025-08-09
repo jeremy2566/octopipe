@@ -37,6 +37,11 @@ spec:
             - name: http
               containerPort: {{ .Values.service.port }}
               protocol: TCP
+          env:
+            {{- if .Values.octopipe.users }}
+            - name: USERS_LIST
+              value: {{ .Values.octopipe.users | toJson }}
+            {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           command:

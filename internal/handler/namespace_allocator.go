@@ -14,6 +14,7 @@ import (
 type NamespaceAllocatorReq struct {
 	ServiceName string `json:"service_name" binding:"required"`
 	BranchName  string `json:"branch_name" binding:"required"`
+	GithubActor string `json:"github_actor" binding:"required"`
 }
 
 func (h Handler) NamespaceAllocator(c *gin.Context) {

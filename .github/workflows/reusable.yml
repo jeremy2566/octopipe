@@ -12,6 +12,10 @@ on:
         description: '相关的分支名称'
         required: true
         type: string
+      github_actor:
+        description: '推送人 GitHub 账号'
+        required: true
+        type: string
 
   # 允许此工作流从 Actions 标签页手动触发
   workflow_dispatch:
@@ -22,6 +26,10 @@ on:
         type: string
       branch_name:
         description: '相关的分支名称'
+        required: true
+        type: string
+      github_actor:
+        description: '推送人 GitHub 账号'
         required: true
         type: string
 
@@ -43,4 +51,5 @@ jobs:
           --data-raw '{
               "service_name": "${{ inputs.service_name }}",
               "branch_name": "${{ inputs.branch_name }}"
+              "github_actor": "${{ inputs.github_actor }}"
           }'

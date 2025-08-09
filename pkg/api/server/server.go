@@ -2,23 +2,29 @@ package server
 
 import (
 	"errors"
-	"github.com/gin-gonic/gin"
-	"github.com/jeremy2566/octopipe/internal/router"
-	"go.uber.org/zap"
 	"net/http"
 	_ "net/http/pprof"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/jeremy2566/octopipe/internal/router"
+	"go.uber.org/zap"
 )
 
+type User struct {
+	Account string `json:"account"`
+	Email   string `json:"email"`
+}
+
 type Config struct {
-	Profile               string        `mapstructure:profile`
+	Profile               string        `mapstructure:"profile"`
 	Host                  string        `mapstructure:"host"`
 	Port                  string        `mapstructure:"port"`
 	PortMetrics           int           `mapstructure:"port-metrics"`
 	ServerShutdownTimeout time.Duration `mapstructure:"server-shutdown-timeout"`
 	HttpServerTimeout     time.Duration `mapstructure:"http-server-timeout"`
+	Users                 map[string]string
 }
-
 type Server struct {
 	logger  *zap.Logger
 	config  *Config

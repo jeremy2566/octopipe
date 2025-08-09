@@ -1,8 +1,15 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/jeremy2566/octopipe/pkg/api/server"
 	"github.com/jeremy2566/octopipe/pkg/logger"
 	"github.com/jeremy2566/octopipe/pkg/shutdown"
@@ -11,11 +18,6 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
-	"os"
-	"path/filepath"
-	"strconv"
-	"strings"
-	"time"
 )
 
 func main() {
@@ -70,9 +72,21 @@ func main() {
 		viper.Set("port", strconv.Itoa(port))
 	}
 
-	var cfg server.Config
+	cfg := server.Config{
+		Users: map[string]string{},
+	}
 	if err := viper.Unmarshal(&cfg); err != nil {
 		log.Panic("config unmarshal failed.", zap.Error(err))
+	}
+
+	userList := viper.GetString("USERS_LIST")
+	var users []server.User
+	if err := json.Unmarshal([]byte(userList), &users); err != nil {
+		log.Warn("无法解析 USERS_LIST，将使用空的用户列表", zap.Error(err))
+	}
+
+	for _, u := range users {
+		cfg.Users[u.Account] = u.Email
 	}
 
 	// log version and port
