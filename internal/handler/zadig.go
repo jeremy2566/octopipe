@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jeremy2566/octopipe/internal/cache"
 	"go.uber.org/zap"
 )
 
@@ -585,11 +586,40 @@ type callback struct {
 }
 
 func (h Handler) Webhook(c *gin.Context) {
-	var callback callback
-	if err := c.ShouldBindJSON(&callback); err != nil {
+	var cb callback
+	if err := c.ShouldBindJSON(&cb); err != nil {
 		h.log.Warn("bind json failed")
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	h.log.Info("received request for zadig webhook.", zap.Any("params", callback))
+	h.log.Info("received request for zadig webhook.", zap.Any("params", cb))
+
+	var success bool
+	switch cb.Workflow.Status {
+	case "passed":
+		success = true
+	default:
+		success = false
+	}
+	branch := cb.Workflow.Stages[0].Jobs[0].Spec.Repositories[0].Branch
+
+	var subEnv string
+	if ns, exist := cache.GetInstance().Get(branch); exist {
+		subEnv = ns
+	} else {
+		subEnv = "test-1"
+	}
+	totalTime := cb.Workflow.EndTime - cb.Workflow.CreateTime
+	req := SenderReq{
+		ProjectName:    cb.Workflow.ProjectName,
+		WorkflowName:   cb.Workflow.WorkflowDisplayName,
+		WorkflowNumber: cb.Workflow.TaskID,
+		Duration:       fmt.Sprintf("%02d:%02d", totalTime/60, totalTime%60),
+		SubEnv:         subEnv,
+		Service:        cb.Workflow.Stages[0].Jobs[0].Spec.Repositories[0].RepoName,
+		Branch:         branch,
+		Success:        success,
+		Email:          cb.Workflow.TaskCreatorEmail,
+	}
+	h.Sender(req)
 }

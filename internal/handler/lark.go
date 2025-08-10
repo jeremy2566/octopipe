@@ -42,7 +42,7 @@ type TemplateVariable struct {
 	Host           string `json:"host"`
 	ProjectName    string `json:"project_name"`
 	WorkflowName   string `json:"workflow_name"`
-	WorkflowNumber string `json:"workflow_number"`
+	WorkflowNumber int    `json:"workflow_number"`
 	SubEnv         string `json:"sub_env"`
 	Service        string `json:"service"`
 	Branch         string `json:"branch"`
@@ -65,22 +65,32 @@ type Message struct {
 }
 
 func (h Handler) Sender(req SenderReq) {
+	var tempId, status string
+	if req.Success {
+		tempId = "ctp_AAz7KWuUUkkh"
+		status = "passed"
+	} else {
+		tempId = "ctp_AAz7KDoTWE2h"
+		status = "failed"
+	}
+	host := fmt.Sprintf(
+		"https://zadigx.shub.us/v1/projects/detail/%s/pipelines/custom/test33/%d?status=%s&id=&display_name=%s",
+		req.ProjectName,
+		req.WorkflowNumber,
+		status,
+		req.WorkflowName,
+	)
 	tv := TemplateVariable{
 		Duration:       req.Duration,
-		Host:           req.Host,
-		ProjectName:    "fat-base-environment",
-		WorkflowName:   "fat-base-workflow",
+		Host:           host,
+		ProjectName:    req.ProjectName,
+		WorkflowName:   req.WorkflowName,
 		WorkflowNumber: req.WorkflowNumber,
 		SubEnv:         req.SubEnv,
 		Service:        req.Service,
 		Branch:         req.Branch,
 	}
-	var tempId string
-	if req.Success {
-		tempId = "ctp_AAz7KWuUUkkh"
-	} else {
-		tempId = "ctp_AAz7KDoTWE2h"
-	}
+
 	data := Data{
 		TemplateID:       tempId,
 		TemplateVariable: tv,
@@ -121,9 +131,10 @@ func (h Handler) Sender(req SenderReq) {
 }
 
 type SenderReq struct {
+	ProjectName    string
+	WorkflowName   string
+	WorkflowNumber int
 	Duration       string
-	Host           string
-	WorkflowNumber string
 	SubEnv         string
 	Service        string
 	Branch         string

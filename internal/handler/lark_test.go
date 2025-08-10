@@ -26,8 +26,7 @@ func TestHandler_Sender_Failed(t *testing.T) {
 
 	req := SenderReq{
 		Duration:       "2m31",
-		Host:           "https://zadigx.shub.us/v1/projects/detail/fat-base-envrionment/pipelines/custom/test33/5354?status=failed&id=&display_name=fat-base-workflow",
-		WorkflowNumber: "5354",
+		WorkflowNumber: 5354,
 		SubEnv:         "test34",
 		Service:        "payment-api",
 		Branch:         "feature/INF-666",
@@ -43,10 +42,13 @@ func TestHandler_Sender_Success(t *testing.T) {
 		client: resty.New(),
 	}
 
+	totalTime := 19
+
 	req := SenderReq{
-		Duration:       "2m30",
-		Host:           "https://zadigx.shub.us/v1/projects/detail/fat-base-envrionment/pipelines/custom/test33/5357?status=passed&id=&display_name=fat-base-workflow",
-		WorkflowNumber: "5357",
+		ProjectName:    "fat-base-environment",
+		WorkflowName:   "fat-base-workflow",
+		WorkflowNumber: 5357,
+		Duration:       fmt.Sprintf("%02d:%02d", totalTime/60, totalTime%60),
 		SubEnv:         "test34",
 		Service:        "payment-api",
 		Branch:         "feature/INF-666",
