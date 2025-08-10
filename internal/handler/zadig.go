@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
 
@@ -526,4 +527,69 @@ func trans(serviceName string) (string, string, string, string) {
 	default:
 		return serviceName, serviceName, serviceName, serviceName
 	}
+}
+
+type callback struct {
+	ObjectKind string `json:"object_kind"`
+	Event      string `json:"event"`
+	Workflow   struct {
+		TaskID              int    `json:"task_id"`
+		ProjectName         string `json:"project_name"`
+		ProjectDisplayName  string `json:"project_display_name"`
+		WorkflowName        string `json:"workflow_name"`
+		WorkflowDisplayName string `json:"workflow_display_name"`
+		Status              string `json:"status"`
+		Remark              string `json:"remark"`
+		DetailURL           string `json:"detail_url"`
+		Error               string `json:"error"`
+		CreateTime          int    `json:"create_time"`
+		StartTime           int    `json:"start_time"`
+		EndTime             int    `json:"end_time"`
+		Stages              []struct {
+			Name      string `json:"name"`
+			Status    string `json:"status"`
+			StartTime int    `json:"start_time"`
+			EndTime   int    `json:"end_time"`
+			Jobs      []struct {
+				Name        string `json:"name"`
+				DisplayName string `json:"display_name"`
+				Type        string `json:"type"`
+				Status      string `json:"status"`
+				StartTime   int    `json:"start_time"`
+				EndTime     int    `json:"end_time"`
+				Error       string `json:"error"`
+				Spec        struct {
+					Repositories []struct {
+						Source        string      `json:"source"`
+						RepoOwner     string      `json:"repo_owner"`
+						RepoNamespace string      `json:"repo_namespace"`
+						RepoName      string      `json:"repo_name"`
+						Branch        string      `json:"branch"`
+						Prs           interface{} `json:"prs"`
+						Tag           string      `json:"tag"`
+						CommitID      string      `json:"commit_id"`
+						CommitURL     string      `json:"commit_url"`
+						CommitMessage string      `json:"commit_message"`
+					} `json:"repositories"`
+					Image string `json:"image"`
+				} `json:"spec"`
+			} `json:"jobs"`
+			Error string `json:"error"`
+		} `json:"stages"`
+		TaskCreator      string `json:"task_creator"`
+		TaskCreatorID    string `json:"task_creator_id"`
+		TaskCreatorPhone string `json:"task_creator_phone"`
+		TaskCreatorEmail string `json:"task_creator_email"`
+		TaskType         string `json:"task_type"`
+	} `json:"workflow"`
+}
+
+func (h Handler) Webhook(c *gin.Context) {
+	var callback callback
+	if err := c.ShouldBindJSON(&callback); err != nil {
+		h.log.Warn("bind json failed")
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	h.log.Info("received request for zadig webhook.", zap.Any("params", callback))
 }

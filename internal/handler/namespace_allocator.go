@@ -58,20 +58,17 @@ func (h Handler) handleFeature(req NamespaceAllocatorReq) {
 				zap.String("branch", req.BranchName),
 				zap.Error(err),
 			)
-			h.Notify(fmt.Sprintf("namespace[%s] service[%s] add failed. msg: %s", ns, req.ServiceName, err.Error()))
 			return
 		}
 		// 部署服务
-		taskId, err := h.DeployService(ns, req.ServiceName, req.BranchName)
+		_, err = h.DeployService(ns, req.ServiceName, req.BranchName)
 		if err != nil {
 			h.log.Error("deploy services failed",
 				zap.String("service", req.ServiceName),
 				zap.String("branch", req.BranchName),
 				zap.Error(err),
 			)
-			h.Notify(fmt.Sprintf("namespace[%s] service[%s] deploy failed.", ns, req.ServiceName))
 		}
-		h.Notify(fmt.Sprintf("namespace[%s] service[%s] deploy succeeded. task id = %d", ns, req.ServiceName, taskId))
 	} else {
 		h.log.Info("cache miss", zap.String("branch_name", bn))
 		// 挑选一个 ns
@@ -83,7 +80,6 @@ func (h Handler) handleFeature(req NamespaceAllocatorReq) {
 		err := h.CreateSubEnv(ns, "redis-backoffice", "redis-general", "backoffice-v1-web-app", "bo-v1-assets", req.ServiceName)
 		if err != nil {
 			h.log.Error("create sub env failed", zap.Error(err))
-			h.Notify(fmt.Sprintf("namespace[%s] created failed.", ns))
 			return
 		}
 
@@ -93,21 +89,18 @@ func (h Handler) handleFeature(req NamespaceAllocatorReq) {
 			h.log.Error("deploy backoffice-v1-web services failed",
 				zap.Error(err),
 			)
-			h.Notify(fmt.Sprintf("namespace[%s] backoffice-v1-web-app deploy failed.", ns))
 			return
 		}
-		taskId, err := h.DeployService(ns, req.ServiceName, req.BranchName)
+		_, err = h.DeployService(ns, req.ServiceName, req.BranchName)
 		if err != nil {
 			h.log.Error("deploy services failed",
 				zap.String("service", req.ServiceName),
 				zap.String("branch", req.BranchName),
 				zap.Error(err),
 			)
-			h.Notify(fmt.Sprintf("namespace[%s] %s failed.", ns, req.BranchName))
 			return
 		}
 
-		h.Notify(fmt.Sprintf("namespace[%s] created succeeded. task id = %d", ns, taskId))
 	}
 }
 

@@ -19,5 +19,6 @@ func New(log *zap.Logger) *gin.Engine {
 
 	r.POST("/namespace_allocator", h.NamespaceAllocator)
 	r.GET("/cache/view", h.ViewCache)
+	r.POST("/zadig/webhook", h.Webhook)
 	return r
 }
