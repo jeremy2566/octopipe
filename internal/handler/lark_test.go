@@ -23,10 +23,13 @@ func TestHandler_Sender_Failed(t *testing.T) {
 		log:    zap.NewNop(),
 		client: resty.New(),
 	}
+	totalTime := 19
 
 	req := SenderReq{
-		Duration:       "2m31",
-		WorkflowNumber: 5354,
+		ProjectName:    "fat-base-environment",
+		WorkflowName:   "fat-base-workflow",
+		WorkflowNumber: 5357,
+		Duration:       fmt.Sprintf("%02d:%02d", totalTime/60, totalTime%60),
 		SubEnv:         "test34",
 		Service:        "payment-api",
 		Branch:         "feature/INF-666",
