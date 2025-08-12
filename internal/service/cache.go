@@ -15,6 +15,7 @@ type Cache interface {
 	ViewAll() []model.DaoNamespace
 	DeleteNamespace(subEnv string) error
 	SyncCache(projectKey string) error
+	ViewBySubEnv(subEnv string) (*model.DaoNamespace, error)
 }
 
 type cacheImpl struct {
@@ -67,6 +68,27 @@ func (c *cacheImpl) ViewAll() []model.DaoNamespace {
 	return c.redisDao.GetAllNamespace()
 }
 
+func (c *cacheImpl) ViewBySubEnv(subEnv string) (*model.DaoNamespace, error) {
+	if err := c.SyncCache("fat-base-envrionment"); err != nil {
+		return nil, err
+	}
+
+	namespaces := c.ViewAll()
+	for _, namespace := range namespaces {
+		if namespace.SubEnv == subEnv {
+			return &namespace, nil
+		}
+	}
+	return nil, fmt.Errorf("not found sub env: %s", subEnv)
+}
+
 func (c *cacheImpl) DeleteNamespace(subEnv string) error {
+	env, err := c.ViewBySubEnv(subEnv)
+	if err != nil {
+		return fmt.Errorf("selected %w failed", err)
+	}
+	if env != nil {
+		return fmt.Errorf("sub env[%s] has existed in zadig. Don't allow delete", subEnv)
+	}
 	return c.redisDao.DeleteNamespace(subEnv)
 }

@@ -21,8 +21,8 @@ func New(log *zap.Logger) *gin.Engine {
 	r.POST("/namespace_allocator", h.NamespaceAllocator)
 	{
 		r.GET("/cache/view", router.ViewAllNamespace)
+		r.GET("/cache/view/:sub_env", router.ViewNamespace)
 		r.DELETE("/cache/:sub_env", router.DeleteNamespace)
-		//r.PUT("/cache/sync", h.SyncCache)
 	}
 	r.POST("/zadig/webhook", h.Webhook)
 	return r

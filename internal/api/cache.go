@@ -14,5 +14,27 @@ func (a Api) ViewAllNamespace(c *gin.Context) {
 func (a Api) DeleteNamespace(c *gin.Context) {
 	subEnv := c.Param("sub_env")
 	err := a.cache.DeleteNamespace(subEnv)
-	print(err)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"code": -1,
+			"msg":  err.Error(),
+		})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"msg": "success",
+	})
+}
+
+func (a Api) ViewNamespace(c *gin.Context) {
+	subEnv := c.Param("sub_env")
+	env, err := a.cache.ViewBySubEnv(subEnv)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"code": -1,
+			"msg":  err.Error(),
+		})
+		return
+	}
+	c.JSON(http.StatusOK, env)
 }

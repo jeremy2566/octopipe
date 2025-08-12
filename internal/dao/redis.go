@@ -27,8 +27,16 @@ type redisImpl struct {
 }
 
 func (r *redisImpl) DeleteNamespace(key string) error {
-	//TODO implement me
-	panic("implement me")
+	redisKey := r.namespaceKey(key)
+	r.log.Info("Deleting namespace from Redis", zap.String("key", redisKey))
+
+	// DEL command returns the number of keys that were removed.
+	// We just need to check for an error.
+	err := r.client.Del(context.Background(), redisKey).Err()
+	if err != nil {
+		return fmt.Errorf("failed to delete key %s from Redis: %w", redisKey, err)
+	}
+	return nil
 }
 
 func NewRdb(log *zap.Logger) Rdb {
