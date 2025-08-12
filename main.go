@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -10,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jeremy2566/octopipe/internal/service"
 	"github.com/jeremy2566/octopipe/pkg/api/server"
 	"github.com/jeremy2566/octopipe/pkg/logger"
 	"github.com/jeremy2566/octopipe/pkg/shutdown"
@@ -18,6 +18,7 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
+	"resty.dev/v3"
 )
 
 func main() {
@@ -79,16 +80,6 @@ func main() {
 		log.Panic("config unmarshal failed.", zap.Error(err))
 	}
 
-	userList := viper.GetString("USERS_LIST")
-	var users []server.User
-	if err := json.Unmarshal([]byte(userList), &users); err != nil {
-		log.Warn("无法解析 USERS_LIST，将使用空的用户列表", zap.Error(err))
-	}
-
-	for _, u := range users {
-		cfg.Users[u.Account] = u.Email
-	}
-
 	// log version and port
 	log.Info("Starting echo",
 		zap.String("version", viper.GetString("version")),
@@ -98,6 +89,17 @@ func main() {
 
 	srv := server.New(&cfg, log)
 	httpServer := srv.ListenAndServe()
+
+	go func() {
+		srv := service.NewCache(
+			log,
+			resty.New().SetRetryCount(3).SetRetryWaitTime(1*time.Second).SetRetryMaxWaitTime(5*time.Second),
+		)
+		err := srv.SyncCache("fat-base-envrionment")
+		if err != nil {
+			log.Error("sync cache failed.", zap.Error(err))
+		}
+	}()
 
 	stopCh := signals.SetupSignalHandler()
 	sd, _ := shutdown.New(cfg.ServerShutdownTimeout, log)

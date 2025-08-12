@@ -93,3 +93,4 @@ helm upgrade octopipe ./charts/octopipe
 - Namespace pool limited to test1-test50 range (`internal/handler/namespace_allocator.go:82`)
 - HTTP client configured with 3 retries and exponential backoff (`internal/handler/handler.go:16`)
 - Graceful shutdown with configurable timeout (`main.go:89`)
+- User list injected via USERS_LIST environment variable (`main.go:50`)
