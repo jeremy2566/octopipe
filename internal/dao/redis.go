@@ -16,9 +16,10 @@ var _ Rdb = &redisImpl{}
 
 type Rdb interface {
 	SaveNamespace(key string, ns model.DaoNamespace) error
-	GetNamespace(key string) (*model.DaoNamespace, error)
+	GetValueByKey(key string) (*model.DaoNamespace, error)
 	GetAllNamespace() []model.DaoNamespace
 	DeleteNamespace(key string) error
+	GetNamespaceByBranch(branch string) (*model.DaoNamespace, error)
 }
 
 type redisImpl struct {
@@ -40,12 +41,19 @@ func (r *redisImpl) DeleteNamespace(key string) error {
 }
 
 func NewRdb(log *zap.Logger) Rdb {
+	client := redis.NewClient(&redis.Options{
+		Addr:     os.Getenv("REDIS_URL"),
+		Password: os.Getenv("REDIS_PWD"),
+	})
+
+	if err := client.Ping(context.Background()).Err(); err != nil {
+		log.Fatal("Failed to connect to Redis for DAO", zap.Error(err))
+	}
+	log.Info("Successfully connected to Redis for DAO")
+
 	return &redisImpl{
-		log: log,
-		client: redis.NewClient(&redis.Options{
-			Addr:     os.Getenv("REDIS_URL"),
-			Password: "redishello521@",
-		}),
+		log:    log,
+		client: client,
 	}
 }
 
@@ -90,7 +98,7 @@ func (r *redisImpl) GetAllNamespace() []model.DaoNamespace {
 	return namespaces
 }
 
-func (r *redisImpl) GetNamespace(key string) (*model.DaoNamespace, error) {
+func (r *redisImpl) GetValueByKey(key string) (*model.DaoNamespace, error) {
 	redisKey := r.namespaceKey(key)
 	data, err := r.client.HGetAll(context.Background(), redisKey).Result()
 	if err != nil {
@@ -126,8 +134,9 @@ func (r *redisImpl) SaveNamespace(key string, ns model.DaoNamespace) error {
 		zap.String("branch", ns.Branch),
 		zap.Any("service_name", ns.ServiceName))
 	services, _ := json.Marshal(ns.ServiceName)
-	err := r.client.HSet(context.Background(), redisKey,
-		"sub_env", ns.SubEnv,
+	err := r.client.HSet(
+		context.Background(), redisKey,
+		"sub_env", key, // 修复：这里应该保存子环境名(key)，而不是完整的 Redis 键。
 		"update_by", ns.UpdateBy,
 		"branch", ns.Branch,
 		"service_name", services,
@@ -138,14 +147,25 @@ func (r *redisImpl) SaveNamespace(key string, ns model.DaoNamespace) error {
 	return nil
 }
 
+func (r *redisImpl) GetNamespaceByBranch(branch string) (*model.DaoNamespace, error) {
+	// 注意：此实现会遍历所有命名空间。
+	// 如果命名空间数量非常大，更高效的做法是建立一个从 branch 到 sub_env 的二级索引。
+	allNamespaces := r.GetAllNamespace()
+
+	for _, ns := range allNamespaces {
+		if ns.Branch == branch {
+			// 创建一个新的变量来持有找到的命名空间，并返回其地址。
+			// 这可以避免返回一个指向循环变量 `ns` 的指针，那是一个常见的 Go 语言陷阱。
+			result := ns
+			return &result, nil
+		}
+	}
+
+	// 没有找到匹配的 branch，这不是一个错误。
+	return nil, nil
+}
+
 // namespaceKey is a helper function to generate a consistent Rdb key for a namespace.
 func (r *redisImpl) namespaceKey(key string) string {
 	return fmt.Sprintf("octopipe:namespace:%s", key)
-}
-
-func NewRedis(log *zap.Logger, client *redis.Client) Rdb {
-	return &redisImpl{
-		log:    log,
-		client: client,
-	}
 }

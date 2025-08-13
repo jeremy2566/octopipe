@@ -10,13 +10,14 @@ import (
 
 type Api struct {
 	cache service.Cache
+	zadig service.Zadig
 }
 
 func New(log *zap.Logger) Api {
 	client := resty.New().SetRetryCount(3).SetRetryWaitTime(1 * time.Second).SetRetryMaxWaitTime(5 * time.Second)
 
-	cache := service.NewCache(log, client)
 	return Api{
-		cache: cache,
+		cache: service.NewCache(log, client),
+		zadig: service.NewZadig(log, client),
 	}
 }

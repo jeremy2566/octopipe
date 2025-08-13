@@ -24,6 +24,15 @@ func New(log *zap.Logger) *gin.Engine {
 		r.GET("/cache/view/:sub_env", router.ViewNamespace)
 		r.DELETE("/cache/:sub_env", router.DeleteNamespace)
 	}
-	r.POST("/zadig/webhook", h.Webhook)
+
+	{
+		r.POST("/github/allocator", router.Allocator)
+	}
+
+	{
+		r.POST("/zadig/namespace", router.CreateSubEnv)
+		r.GET("/zadig/service_charts", router.ServiceCharts)
+		r.POST("/zadig/webhook", h.Webhook)
+	}
 	return r
 }

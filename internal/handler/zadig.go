@@ -3,7 +3,6 @@ package handler
 import (
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jeremy2566/octopipe/internal/cache"
@@ -66,14 +65,6 @@ type ShareEnv struct {
 }
 
 func (h Handler) CreateSubEnv(namespace string, services ...string) error {
-	if !strings.HasPrefix(namespace, "test") {
-		err := fmt.Errorf("namespace prefix cannot be 'test', got: %s", namespace)
-		h.log.Error("validation failed for namespace",
-			zap.String("namespace", namespace),
-			zap.Error(err),
-		)
-		return err
-	}
 	if len(services) <= 0 {
 		err := fmt.Errorf("services is empty")
 		h.log.Error("validation failed for services",
@@ -82,21 +73,21 @@ func (h Handler) CreateSubEnv(namespace string, services ...string) error {
 		return err
 	}
 	var cvs []ChartValues
-	charts := h.GetServiceCharts()
-	for _, service := range services {
-		value, exist := charts[service]
-		if !exist {
-			h.log.Warn("service not found", zap.String("service", service))
-			continue
-		}
-
-		cvs = append(cvs, ChartValues{
-			EnvName:        namespace,
-			ServiceName:    service,
-			ChartVersion:   value,
-			DeployStrategy: "deploy",
-		})
-	}
+	//charts := h.GetServiceCharts()
+	//for _, service := range services {
+	//	value, exist := charts[service]
+	//	if !exist {
+	//		h.log.Warn("service not found", zap.String("service", service))
+	//		continue
+	//	}
+	//
+	//	cvs = append(cvs, ChartValues{
+	//		EnvName:        namespace,
+	//		ServiceName:    service,
+	//		ChartVersion:   value,
+	//		DeployStrategy: "deploy",
+	//	})
+	//}
 
 	se := ShareEnv{
 		Enable:  true,

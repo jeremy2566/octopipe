@@ -50,3 +50,30 @@ func (r RespZadigEnvDetail) GetServices() []string {
 	}
 	return ret
 }
+
+type AllocatorReq struct {
+	ServiceName string `json:"service_name" binding:"required"`
+	BranchName  string `json:"branch_name" binding:"required"`
+	GithubActor string `json:"github_actor" binding:"required"`
+}
+
+type ChartInfoReq struct {
+	ServiceName  string `json:"service_name"`
+	ChartVersion string `json:"chart_version"`
+}
+
+type ShareEnvReq struct {
+	Enable  bool   `json:"enable"`
+	IsBase  bool   `json:"isBase"`
+	BaseEnv string `json:"base_env"`
+}
+
+type CreateSubEnvReq []struct {
+	EnvName     string         `json:"env_name"`
+	ClusterID   string         `json:"cluster_id"`
+	RegistryID  string         `json:"registry_id"`
+	ChartValues []ChartInfoReq `json:"chartValues"`
+	Namespace   string         `json:"namespace"`
+	IsExisted   bool           `json:"is_existed"`
+	ShareEnv    ShareEnvReq    `json:"share_env"`
+}
