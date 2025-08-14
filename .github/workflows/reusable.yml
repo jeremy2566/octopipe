@@ -46,7 +46,7 @@ jobs:
       - name: Perform HTTP Call
         run: |
           # 使用 secret 进行认证，并使用 inputs 构建请求体
-          curl -v --location --request POST 'https://octopipe.k8s.shub.us/namespace_allocator' \
+          curl -v --location --request POST 'https://octopipe.k8s.shub.us/github/allocator' \
           --header 'Content-Type: application/json' \
           --data-raw '{
               "service_name": "${{ inputs.service_name }}",
