@@ -42,7 +42,8 @@ jobs:
         run: |
           echo "Service Name: ${{ inputs.service_name }}"
           echo "Branch Name: ${{ inputs.branch_name }}"
-
+          echo "Actor Name: ${{ inputs.github_actor }}"
+          
       - name: Perform HTTP Call
         run: |
           # 使用 secret 进行认证，并使用 inputs 构建请求体
