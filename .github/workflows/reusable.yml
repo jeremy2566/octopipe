@@ -51,6 +51,6 @@ jobs:
           --header 'Content-Type: application/json' \
           --data-raw '{
               "service_name": "${{ inputs.service_name }}",
-              "branch_name": "${{ inputs.branch_name }}"
+              "branch_name": "${{ inputs.branch_name }}",
               "github_actor": "${{ inputs.github_actor }}"
           }'
