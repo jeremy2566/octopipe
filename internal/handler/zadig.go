@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -73,21 +74,21 @@ func (h Handler) CreateSubEnv(namespace string, services ...string) error {
 		return err
 	}
 	var cvs []ChartValues
-	//charts := h.GetServiceCharts()
-	//for _, service := range services {
-	//	value, exist := charts[service]
-	//	if !exist {
-	//		h.log.Warn("service not found", zap.String("service", service))
-	//		continue
-	//	}
-	//
-	//	cvs = append(cvs, ChartValues{
-	//		EnvName:        namespace,
-	//		ServiceName:    service,
-	//		ChartVersion:   value,
-	//		DeployStrategy: "deploy",
-	//	})
-	//}
+	charts := h.GetServiceCharts()
+	for _, service := range services {
+		value, exist := charts[service]
+		if !exist {
+			h.log.Warn("service not found", zap.String("service", service))
+			continue
+		}
+
+		cvs = append(cvs, ChartValues{
+			EnvName:        namespace,
+			ServiceName:    service,
+			ChartVersion:   value,
+			DeployStrategy: "deploy",
+		})
+	}
 
 	se := ShareEnv{
 		Enable:  true,
@@ -485,6 +486,9 @@ func (h Handler) DeployService(namespace, serviceName, branchName string) (int, 
 			},
 		},
 	}
+
+	marshal, _ := json.Marshal(req)
+	fmt.Println(string(marshal))
 
 	ret := struct {
 		ProjectName  string `json:"project_name"`

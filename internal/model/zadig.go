@@ -57,7 +57,26 @@ type AllocatorReq struct {
 	GithubActor string `json:"github_actor" binding:"required"`
 }
 
+type DeployServiceReq struct {
+	SubEnv      string `json:"sub_env" binding:"required"`
+	ServiceName string `json:"service_name" binding:"required"`
+	BranchName  string `json:"branch_name" binding:"required"`
+	GithubActor string `json:"github_actor" binding:"required"`
+}
+
+type AddServiceReq struct {
+	SubEnv      string `json:"sub_env" binding:"required"`
+	ServiceName string `json:"service_name" binding:"required"`
+}
+
 type ChartInfoReq struct {
+	EnvName        string `json:"envName"`
+	ServiceName    string `json:"serviceName"`
+	ChartVersion   string `json:"chartVersion"`
+	DeployStrategy string `json:"deploy_strategy"`
+}
+
+type RespChartInfo struct {
 	ServiceName  string `json:"service_name"`
 	ChartVersion string `json:"chart_version"`
 }
@@ -76,4 +95,75 @@ type CreateSubEnvReq []struct {
 	Namespace   string         `json:"namespace"`
 	IsExisted   bool           `json:"is_existed"`
 	ShareEnv    ShareEnvReq    `json:"share_env"`
+}
+
+type DeployServicesReq struct {
+	Name        string `json:"name"`
+	DisplayName string `json:"display_name"`
+	Params      []struct {
+		Name  string `json:"name"`
+		Type  string `json:"type"`
+		Value string `json:"value"`
+	} `json:"params"`
+	Stages []struct {
+		Name string `json:"name"`
+		Jobs []struct {
+			Name string `json:"name"`
+			Type string `json:"type"`
+			Spec struct {
+				DefaultServiceAndBuilds []struct {
+					ServiceName   string `json:"service_name"`
+					ServiceModule string `json:"service_module"`
+					KeyVals       []struct {
+						Key   string `json:"key"`
+						Value string `json:"value"`
+						Type  string `json:"type"`
+					} `json:"key_vals"`
+					Repos []struct {
+						Source        string `json:"source"`
+						RepoOwner     string `json:"repo_owner"`
+						RepoNamespace string `json:"repo_namespace"`
+						RepoName      string `json:"repo_name"`
+						RemoteName    string `json:"remote_name"`
+						Branch        string `json:"branch"`
+						CodehostID    int    `json:"codehost_id"`
+					} `json:"repos"`
+				} `json:"default_service_and_builds"`
+				ServiceAndBuilds []struct {
+					ServiceName   string `json:"service_name"`
+					ServiceModule string `json:"service_module"`
+					BuildName     string `json:"build_name"`
+					KeyVals       []struct {
+						Key   string `json:"key"`
+						Value string `json:"value"`
+						Type  string `json:"type"`
+					} `json:"key_vals"`
+					Repos []struct {
+						Source        string `json:"source"`
+						RepoOwner     string `json:"repo_owner"`
+						RepoNamespace string `json:"repo_namespace"`
+						RepoName      string `json:"repo_name"`
+						RemoteName    string `json:"remote_name"`
+						Branch        string `json:"branch"`
+						CodehostID    int    `json:"codehost_id"`
+					} `json:"repos"`
+				} `json:"service_and_builds"`
+			} `json:"spec"`
+		} `json:"jobs"`
+	} `json:"stages"`
+	Project string `json:"project"`
+}
+
+type UtilsFun struct {
+	ReplacePolicy string                `json:"replacePolicy"`
+	EnvNames      []string              `json:"envNames"`
+	ChartValues   []UtilsFunChartValues `json:"chartValues"`
+}
+
+type UtilsFunChartValues struct {
+	EnvName         string `json:"envName"`
+	ServiceName     string `json:"serviceName"`
+	ReleaseName     string `json:"releaseName"`
+	ChartVersion    string `json:"chartVersion"`
+	Deploy_strategy string `json:"deploy_strategy"`
 }

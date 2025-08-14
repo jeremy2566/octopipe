@@ -31,6 +31,9 @@ func New(log *zap.Logger) *gin.Engine {
 
 	{
 		r.POST("/zadig/namespace", router.CreateSubEnv)
+		r.DELETE("/zadig/namespace/:sub_env", router.DeleteSubEnv)
+		r.POST("/zadig/add_service", router.AddService)
+		r.POST("/zadig/deploy_service", router.DeployService)
 		r.GET("/zadig/service_charts", router.ServiceCharts)
 		r.POST("/zadig/webhook", h.Webhook)
 	}

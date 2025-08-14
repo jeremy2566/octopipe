@@ -1,10 +1,12 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/jeremy2566/octopipe/internal/dao"
 	"github.com/jeremy2566/octopipe/internal/model"
@@ -18,14 +20,366 @@ type Zadig interface {
 	GetTestEnvList(projectKey string) ([]model.RespZadigEnv, error)
 	GetTestEnvDetail(envKey, projectKey string) (*model.RespZadigEnvDetail, error)
 	Allocator(req model.AllocatorReq) error
-	CreateSubEnv() error
+	CreateSubEnv() (string, error)
 	GetServiceCharts() map[string]string
+	DeployService(req model.DeployServiceReq) (int, error)
+	AddService(req model.AddServiceReq) error
+	DeleteSubEnv(env string) error
 }
 
 type zadigImpl struct {
 	log    *zap.Logger
 	client *resty.Client
 	rdb    dao.Rdb
+	lark   Lark
+}
+
+func (z *zadigImpl) DeleteSubEnv(env string) error {
+	return z.rdb.DeleteNamespace(env)
+}
+
+func (z *zadigImpl) AddService(req model.AddServiceReq) error {
+	z.log.Info("add service", zap.Any("params", req))
+	charts := z.GetServiceCharts()
+	chartVersion, exist := charts[req.ServiceName]
+	if !exist {
+		z.log.Warn("service not found", zap.String("service", req.ServiceName))
+		return fmt.Errorf("service not found")
+	}
+
+	ufcv := []model.UtilsFunChartValues{
+		{
+			EnvName:         req.SubEnv,
+			ServiceName:     req.ServiceName,
+			ReleaseName:     req.ServiceName,
+			ChartVersion:    chartVersion,
+			Deploy_strategy: "deploy",
+		},
+	}
+	uf := model.UtilsFun{
+		ReplacePolicy: "notUseEnvImage",
+		EnvNames:      []string{req.SubEnv},
+		ChartValues:   ufcv,
+	}
+
+	var apiResponse []struct {
+		EnvName    string `json:"env_name"`
+		Status     string `json:"status"`
+		ErrMessage string `json:"err_message"`
+	}
+	resp, err := z.client.R().
+		SetResult(&apiResponse).
+		SetBody(uf).
+		Put("/api/aslan/environment/environments?type=helm&projectName=fat-base-envrionment")
+
+	if err != nil {
+		z.log.Warn("failed to fetch environments", zap.Error(err))
+	}
+	if resp.StatusCode() != http.StatusOK {
+		z.log.Warn("resp status code not ok",
+			zap.Int("status_code", resp.StatusCode()),
+			zap.String("response body", resp.String()),
+		)
+	}
+
+	return nil
+}
+
+// trans 服务名转 service name, service module, repo name 和 build name
+func (z *zadigImpl) trans(serviceName string) (string, string, string, string) {
+	switch serviceName {
+	case "backoffice-v1-web":
+		return "backoffice-v1-web-app", "backoffice-v1-web", "backoffice-v1-web", "backoffice-v1-web"
+	default:
+		return serviceName, serviceName, serviceName, serviceName
+	}
+}
+
+func (z *zadigImpl) DeployService(req model.DeployServiceReq) (int, error) {
+	z.log.Info("deploy service.", zap.Any("params", req))
+	sn, sm, rn, bn := z.trans(req.ServiceName)
+
+	servicesReq := model.DeployServicesReq{
+		Name:        "test33",
+		DisplayName: "fat-base-workflow",
+		Project:     "fat-base-envrionment",
+		Params: []struct {
+			Name  string `json:"name"`
+			Type  string `json:"type"`
+			Value string `json:"value"`
+		}{
+			{
+				Name:  "环境",
+				Type:  "choice",
+				Value: req.SubEnv,
+			},
+		},
+		Stages: []struct {
+			Name string `json:"name"`
+			Jobs []struct {
+				Name string `json:"name"`
+				Type string `json:"type"`
+				Spec struct {
+					DefaultServiceAndBuilds []struct {
+						ServiceName   string `json:"service_name"`
+						ServiceModule string `json:"service_module"`
+						KeyVals       []struct {
+							Key   string `json:"key"`
+							Value string `json:"value"`
+							Type  string `json:"type"`
+						} `json:"key_vals"`
+						Repos []struct {
+							Source        string `json:"source"`
+							RepoOwner     string `json:"repo_owner"`
+							RepoNamespace string `json:"repo_namespace"`
+							RepoName      string `json:"repo_name"`
+							RemoteName    string `json:"remote_name"`
+							Branch        string `json:"branch"`
+							CodehostID    int    `json:"codehost_id"`
+						} `json:"repos"`
+					} `json:"default_service_and_builds"`
+					ServiceAndBuilds []struct {
+						ServiceName   string `json:"service_name"`
+						ServiceModule string `json:"service_module"`
+						BuildName     string `json:"build_name"`
+						KeyVals       []struct {
+							Key   string `json:"key"`
+							Value string `json:"value"`
+							Type  string `json:"type"`
+						} `json:"key_vals"`
+						Repos []struct {
+							Source        string `json:"source"`
+							RepoOwner     string `json:"repo_owner"`
+							RepoNamespace string `json:"repo_namespace"`
+							RepoName      string `json:"repo_name"`
+							RemoteName    string `json:"remote_name"`
+							Branch        string `json:"branch"`
+							CodehostID    int    `json:"codehost_id"`
+						} `json:"repos"`
+					} `json:"service_and_builds"`
+				} `json:"spec"`
+			} `json:"jobs"`
+		}{
+			{
+				Name: "构建",
+				Jobs: []struct {
+					Name string `json:"name"`
+					Type string `json:"type"`
+					Spec struct {
+						DefaultServiceAndBuilds []struct {
+							ServiceName   string `json:"service_name"`
+							ServiceModule string `json:"service_module"`
+							KeyVals       []struct {
+								Key   string `json:"key"`
+								Value string `json:"value"`
+								Type  string `json:"type"`
+							} `json:"key_vals"`
+							Repos []struct {
+								Source        string `json:"source"`
+								RepoOwner     string `json:"repo_owner"`
+								RepoNamespace string `json:"repo_namespace"`
+								RepoName      string `json:"repo_name"`
+								RemoteName    string `json:"remote_name"`
+								Branch        string `json:"branch"`
+								CodehostID    int    `json:"codehost_id"`
+							} `json:"repos"`
+						} `json:"default_service_and_builds"`
+						ServiceAndBuilds []struct {
+							ServiceName   string `json:"service_name"`
+							ServiceModule string `json:"service_module"`
+							BuildName     string `json:"build_name"`
+							KeyVals       []struct {
+								Key   string `json:"key"`
+								Value string `json:"value"`
+								Type  string `json:"type"`
+							} `json:"key_vals"`
+							Repos []struct {
+								Source        string `json:"source"`
+								RepoOwner     string `json:"repo_owner"`
+								RepoNamespace string `json:"repo_namespace"`
+								RepoName      string `json:"repo_name"`
+								RemoteName    string `json:"remote_name"`
+								Branch        string `json:"branch"`
+								CodehostID    int    `json:"codehost_id"`
+							} `json:"repos"`
+						} `json:"service_and_builds"`
+					} `json:"spec"`
+				}{
+					{
+						Name: "构建发布",
+						Type: "zadig-build",
+						Spec: struct {
+							DefaultServiceAndBuilds []struct {
+								ServiceName   string `json:"service_name"`
+								ServiceModule string `json:"service_module"`
+								KeyVals       []struct {
+									Key   string `json:"key"`
+									Value string `json:"value"`
+									Type  string `json:"type"`
+								} `json:"key_vals"`
+								Repos []struct {
+									Source        string `json:"source"`
+									RepoOwner     string `json:"repo_owner"`
+									RepoNamespace string `json:"repo_namespace"`
+									RepoName      string `json:"repo_name"`
+									RemoteName    string `json:"remote_name"`
+									Branch        string `json:"branch"`
+									CodehostID    int    `json:"codehost_id"`
+								} `json:"repos"`
+							} `json:"default_service_and_builds"`
+							ServiceAndBuilds []struct {
+								ServiceName   string `json:"service_name"`
+								ServiceModule string `json:"service_module"`
+								BuildName     string `json:"build_name"`
+								KeyVals       []struct {
+									Key   string `json:"key"`
+									Value string `json:"value"`
+									Type  string `json:"type"`
+								} `json:"key_vals"`
+								Repos []struct {
+									Source        string `json:"source"`
+									RepoOwner     string `json:"repo_owner"`
+									RepoNamespace string `json:"repo_namespace"`
+									RepoName      string `json:"repo_name"`
+									RemoteName    string `json:"remote_name"`
+									Branch        string `json:"branch"`
+									CodehostID    int    `json:"codehost_id"`
+								} `json:"repos"`
+							} `json:"service_and_builds"`
+						}{
+							DefaultServiceAndBuilds: []struct {
+								ServiceName   string `json:"service_name"`
+								ServiceModule string `json:"service_module"`
+								KeyVals       []struct {
+									Key   string `json:"key"`
+									Value string `json:"value"`
+									Type  string `json:"type"`
+								} `json:"key_vals"`
+								Repos []struct {
+									Source        string `json:"source"`
+									RepoOwner     string `json:"repo_owner"`
+									RepoNamespace string `json:"repo_namespace"`
+									RepoName      string `json:"repo_name"`
+									RemoteName    string `json:"remote_name"`
+									Branch        string `json:"branch"`
+									CodehostID    int    `json:"codehost_id"`
+								} `json:"repos"`
+							}{
+								{
+									ServiceName:   sn,
+									ServiceModule: sm,
+									KeyVals: []struct {
+										Key   string `json:"key"`
+										Value string `json:"value"`
+										Type  string `json:"type"`
+									}{{
+										Key:   "ENV_NAME",
+										Value: "{{.workflow.params.环境}}",
+										Type:  "string",
+									}},
+									Repos: []struct {
+										Source        string `json:"source"`
+										RepoOwner     string `json:"repo_owner"`
+										RepoNamespace string `json:"repo_namespace"`
+										RepoName      string `json:"repo_name"`
+										RemoteName    string `json:"remote_name"`
+										Branch        string `json:"branch"`
+										CodehostID    int    `json:"codehost_id"`
+									}{
+										{
+											Source:        "github",
+											RepoOwner:     "storehubnet",
+											RepoNamespace: "storehubnet",
+											RepoName:      rn,
+											RemoteName:    "origin",
+											Branch:        req.BranchName,
+											CodehostID:    6,
+										},
+									},
+								},
+							},
+							ServiceAndBuilds: []struct {
+								ServiceName   string `json:"service_name"`
+								ServiceModule string `json:"service_module"`
+								BuildName     string `json:"build_name"`
+								KeyVals       []struct {
+									Key   string `json:"key"`
+									Value string `json:"value"`
+									Type  string `json:"type"`
+								} `json:"key_vals"`
+								Repos []struct {
+									Source        string `json:"source"`
+									RepoOwner     string `json:"repo_owner"`
+									RepoNamespace string `json:"repo_namespace"`
+									RepoName      string `json:"repo_name"`
+									RemoteName    string `json:"remote_name"`
+									Branch        string `json:"branch"`
+									CodehostID    int    `json:"codehost_id"`
+								} `json:"repos"`
+							}{
+								{
+									ServiceName:   sn,
+									ServiceModule: sm,
+									BuildName:     fmt.Sprintf("fat-base-envrionment-build-%s-1", bn),
+									KeyVals: []struct {
+										Key   string `json:"key"`
+										Value string `json:"value"`
+										Type  string `json:"type"`
+									}{{
+										Key:   "ENV_NAME",
+										Value: "{{.workflow.params.环境}}",
+										Type:  "string",
+									}},
+									Repos: []struct {
+										Source        string `json:"source"`
+										RepoOwner     string `json:"repo_owner"`
+										RepoNamespace string `json:"repo_namespace"`
+										RepoName      string `json:"repo_name"`
+										RemoteName    string `json:"remote_name"`
+										Branch        string `json:"branch"`
+										CodehostID    int    `json:"codehost_id"`
+									}{
+										{
+											Source:        "github",
+											RepoOwner:     "storehubnet",
+											RepoNamespace: "storehubnet",
+											RepoName:      rn,
+											RemoteName:    "origin",
+											Branch:        req.BranchName,
+											CodehostID:    6,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	ret := struct {
+		ProjectName  string `json:"project_name"`
+		WorkflowName string `json:"workflow_name"`
+		TaskID       int    `json:"task_id"`
+	}{}
+	resp, err := z.client.R().
+		SetResult(&ret).
+		SetBody(servicesReq).
+		Post("/api/aslan/workflow/v4/workflowtask?projectName=fat-base-envrionment")
+	if err != nil {
+		z.log.Warn("deploy srv err.", zap.Error(err))
+		return 0, fmt.Errorf("deploy srv err: %w", err)
+	}
+	if resp.StatusCode() != http.StatusOK {
+		z.log.Warn("resp status code not ok",
+			zap.Int("status_code", resp.StatusCode()),
+			zap.String("response body", resp.String()),
+		)
+		return 0, fmt.Errorf("deploy srv status code not 200: %w", err)
+	}
+
+	return ret.TaskID, nil
 }
 
 func NewZadig(log *zap.Logger, client *resty.Client) Zadig {
@@ -106,29 +460,133 @@ func (z *zadigImpl) handleFeature(req model.AllocatorReq) error {
 	}
 	if namespace == nil {
 		// 创建 ns，并部署服务
-		z.CreateSubEnv()
+		if env, err := z.CreateSubEnv(); err != nil {
+			z.log.Warn("create namespace failed.", zap.String("namespace", env))
+			return err
+		} else {
+			// 默认部署 backoffice-v1-web-app
+			if taskId, err := z.DeployService(model.DeployServiceReq{
+				SubEnv:      env,
+				ServiceName: "backoffice-v1-web",
+				BranchName:  "feature/INF-666",
+				GithubActor: "jeremy2566",
+			}); err != nil {
+				// 加入 redis 缓存
+				if err := z.rdb.SaveNamespace(env, model.DaoNamespace{
+					SubEnv:   env,
+					UpdateBy: req.GithubActor,
+					Branch:   branchName,
+				}); err != nil {
+					z.log.Warn("save namespace failed.", zap.String("namespace", env))
+				}
+				z.log.Warn("deploy service failed.", zap.String("service", "backoffice-v1-web-app"))
+				return err
+			} else {
+				// 加入 redis 缓存
+				if err := z.rdb.SaveNamespace(env, model.DaoNamespace{
+					SubEnv:      env,
+					UpdateBy:    req.GithubActor,
+					Branch:      branchName,
+					ServiceName: []string{"backoffice-v1-web-app"},
+				}); err != nil {
+					z.log.Warn("save namespace failed.", zap.String("namespace", env))
+				}
+				z.log.Info("deploy service.", zap.String("service", "backoffice-v1-web"), zap.Int("taskId", taskId))
+			}
+
+			// 添加新服务到 ns
+			if err := z.AddService(model.AddServiceReq{
+				SubEnv:      env,
+				ServiceName: req.ServiceName,
+			}); err != nil {
+				z.log.Warn("add service failed.", zap.String("service", req.ServiceName))
+				return err
+			}
+			if err := z.rdb.SaveNamespace(env, model.DaoNamespace{
+				SubEnv:      env,
+				UpdateBy:    req.GithubActor,
+				Branch:      branchName,
+				ServiceName: []string{req.ServiceName},
+			}); err != nil {
+				z.log.Warn("save namespace failed.", zap.String("namespace", env))
+			}
+			if taskId, err := z.DeployService(model.DeployServiceReq{
+				SubEnv:      env,
+				ServiceName: req.ServiceName,
+				BranchName:  branchName,
+				GithubActor: "jeremy2566",
+			}); err != nil {
+				z.log.Warn("deploy service failed.", zap.String("service", req.ServiceName))
+			} else {
+				z.log.Info("deploy service.", zap.String("service", req.ServiceName), zap.Int("taskId", taskId))
+			}
+		}
 	} else {
 		// 添加新服务到 ns
+		if err := z.AddService(model.AddServiceReq{
+			SubEnv:      namespace.SubEnv,
+			ServiceName: req.ServiceName,
+		}); err != nil {
+			z.log.Warn("add service failed.", zap.String("service", req.ServiceName))
+			return err
+		}
+
+		if err := z.rdb.SaveNamespace(namespace.SubEnv, model.DaoNamespace{
+			SubEnv:      namespace.SubEnv,
+			UpdateBy:    req.GithubActor,
+			Branch:      branchName,
+			ServiceName: []string{req.ServiceName},
+		}); err != nil {
+			z.log.Warn("save namespace failed.", zap.String("namespace", namespace.SubEnv))
+		}
+		if taskId, err := z.DeployService(model.DeployServiceReq{
+			SubEnv:      namespace.SubEnv,
+			ServiceName: req.ServiceName,
+			BranchName:  branchName,
+			GithubActor: "jeremy2566",
+		}); err != nil {
+			z.log.Warn("deploy service failed.", zap.String("service", req.ServiceName))
+		} else {
+			z.log.Info("deploy service.", zap.String("service", req.ServiceName), zap.Int("taskId", taskId))
+		}
+
 	}
 
 	return nil
 }
 
-func (z *zadigImpl) CreateSubEnv() error {
+func (z *zadigImpl) CreateSubEnv() (string, error) {
 	namespace := z.selectedNamespace()
 	se := model.ShareEnvReq{
 		Enable:  true,
 		IsBase:  false,
 		BaseEnv: "test33",
 	}
+	var cvs []model.ChartInfoReq
+	charts := z.GetServiceCharts()
+	for _, service := range []string{"redis-backoffice", "redis-general", "backoffice-v1-web-app", "bo-v1-assets"} {
+		value, exist := charts[service]
+		if !exist {
+			z.log.Warn("service not found", zap.String("service", service))
+			continue
+		}
+
+		cvs = append(cvs, model.ChartInfoReq{
+			EnvName:        namespace,
+			ServiceName:    service,
+			ChartVersion:   value,
+			DeployStrategy: "deploy",
+		})
+	}
 	req := model.CreateSubEnvReq{
 		{
-			EnvName:    namespace,
-			ClusterID:  "64e48b5b8fc410571753cc6c",
-			RegistryID: "64e485c78fc410571753cc67",
-			Namespace:  namespace,
-			IsExisted:  false,
-			ShareEnv:   se,
+			EnvName:     namespace,
+			ClusterID:   "64e48b5b8fc410571753cc6c",
+			RegistryID:  "64e485c78fc410571753cc67",
+			ChartValues: cvs,
+			Namespace:   namespace,
+			IsExisted:   false,
+			ShareEnv:    se,
 		},
 	}
 
@@ -150,7 +608,48 @@ func (z *zadigImpl) CreateSubEnv() error {
 			zap.String("response body", resp.String()),
 		)
 	}
-	return nil
+	// 等待环境创建完成
+	if err := z.waitForEnvReady(namespace, 5*time.Minute); err != nil {
+		z.log.Error("environment creation failed", zap.String("namespace", namespace), zap.Error(err))
+		return namespace, fmt.Errorf("environment creation failed: %w", err)
+	}
+
+	return namespace, nil
+}
+
+// waitForEnvReady 等待环境状态变为success
+func (z *zadigImpl) waitForEnvReady(envName string, timeout time.Duration) error {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	ticker := time.NewTicker(5 * time.Second) // 每5秒检查一次
+	defer ticker.Stop()
+
+	z.log.Info("waiting for environment to be ready", zap.String("env", envName))
+
+	for {
+		select {
+		case <-ctx.Done():
+			return fmt.Errorf("timeout waiting for environment %s to be ready", envName)
+		case <-ticker.C:
+			detail, err := z.GetTestEnvDetail(envName, "fat-base-envrionment")
+			if err != nil {
+				z.log.Warn("failed to get env detail", zap.String("env", envName), zap.Error(err))
+				continue
+			}
+
+			z.log.Info("checking environment status", zap.String("env", envName), zap.String("status", detail.Status))
+
+			if detail.Status == "success" {
+				z.log.Info("environment is ready", zap.String("env", envName))
+				return nil
+			}
+
+			if detail.Status == "error" {
+				return fmt.Errorf("environment %s creation failed with status: %s", envName, detail.Status)
+			}
+		}
+	}
 }
 
 func (z *zadigImpl) selectedNamespace() string {
@@ -186,7 +685,7 @@ func (z *zadigImpl) selectedNamespace() string {
 
 func (z *zadigImpl) GetServiceCharts() map[string]string {
 	apiResponse := struct {
-		ChartInfos []model.ChartInfoReq `json:"chart_infos"`
+		ChartInfos []model.RespChartInfo `json:"chart_infos"`
 	}{}
 	resp, err := z.client.R().
 		SetResult(&apiResponse).

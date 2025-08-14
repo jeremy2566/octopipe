@@ -50,10 +50,10 @@ func (c *cacheImpl) SyncCache(projectKey string) error {
 			c.log.Warn("get test env detail err", zap.String("sub env", env.Namespace), zap.Error(err))
 			continue
 		}
+		c.redisDao.GetValueByKey()
 		err = c.redisDao.SaveNamespace(env.Namespace, model.DaoNamespace{
 			SubEnv:      env.Namespace,
 			UpdateBy:    env.UpdateBy,
-			Branch:      "in-tree",
 			ServiceName: detail.GetServices(),
 		})
 		if err != nil {

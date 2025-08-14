@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -27,7 +28,7 @@ func (a Api) Callback(c *gin.Context) {
 }
 
 func (a Api) CreateSubEnv(c *gin.Context) {
-	err := a.zadig.CreateSubEnv()
+	subEnv, err := a.zadig.CreateSubEnv()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"msg": "create sub env failed.",
@@ -35,7 +36,36 @@ func (a Api) CreateSubEnv(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"msg": "create sub env success.",
+		"msg": fmt.Sprintf("create sub env[%s] success.", subEnv),
+	})
+}
+
+func (a Api) AddService(c *gin.Context) {
+	var req model.AddServiceReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if err := a.zadig.AddService(req); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"msg": "success",
+	})
+}
+func (a Api) DeployService(c *gin.Context) {
+	var req model.DeployServiceReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if _, err := a.zadig.DeployService(req); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"msg": "success",
 	})
 }
 
@@ -43,5 +73,20 @@ func (a Api) ServiceCharts(c *gin.Context) {
 	charts := a.zadig.GetServiceCharts()
 	c.JSON(http.StatusOK, gin.H{
 		"data": charts,
+	})
+}
+
+func (a Api) DeleteSubEnv(c *gin.Context) {
+	subEnv := c.Param("sub_env")
+	err := a.zadig.DeleteSubEnv(subEnv)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"code": -1,
+			"msg":  err.Error(),
+		})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"msg": "success",
 	})
 }
