@@ -16,6 +16,7 @@ var _ Rdb = &redisImpl{}
 
 type Rdb interface {
 	SaveNamespace(key string, ns model.DaoNamespace) error
+	UpdateServiceByKey(key string, service string)
 	GetValueByKey(key string) (*model.DaoNamespace, error)
 	GetAllNamespace() []model.DaoNamespace
 	DeleteNamespace(key string) error
@@ -25,6 +26,29 @@ type Rdb interface {
 type redisImpl struct {
 	log    *zap.Logger
 	client *redis.Client
+}
+
+func (r *redisImpl) UpdateServiceByKey(key string, service string) {
+	ns, err := r.GetValueByKey(key)
+	if err != nil {
+		r.log.Warn("updateServiceByKey failed.", zap.Error(err))
+		return
+	}
+
+	if ns == nil {
+		r.log.Warn("namespace is nil.", zap.String("key", key))
+		return
+	}
+	services := ns.ServiceName
+	for _, s := range services {
+		if s == service {
+			return
+		}
+	}
+
+	services = append(services, service)
+	marshal, _ := json.Marshal(services)
+	r.client.HSet(context.Background(), r.namespaceKey(key), "service_name", marshal)
 }
 
 func (r *redisImpl) DeleteNamespace(key string) error {

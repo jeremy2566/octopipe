@@ -13,9 +13,9 @@ func TestRedisImpl_SaveNamespace(t *testing.T) {
 	r := NewRdb(log)
 
 	err := r.SaveNamespace("test-1", model.DaoNamespace{
-		SubEnv:      "test-1",
-		Branch:      "branch-1",
-		ServiceName: []string{"service-1"},
+		//SubEnv:      "test-1",
+		//Branch:      "branch-1",
+		ServiceName: []string{"service-2"},
 	})
 	assert.Nil(t, err)
 }
@@ -46,4 +46,10 @@ func TestNewRdb_GetNamespaceByBranch(t *testing.T) {
 	namespace, _ := rdb.GetNamespaceByBranch("branch1-1")
 	assert.NotNil(t, namespace)
 	//log.Info("TestNewRdb_GetNamespaceByBranch", zap.Any("namespace", namespace))
+}
+
+func TestNewRdb_UpdateServiceByKey(t *testing.T) {
+	log, _ := zap.NewDevelopment()
+	rdb := NewRdb(log)
+	rdb.UpdateServiceByKey("test-1", "service-1")
 }

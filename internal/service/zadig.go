@@ -460,98 +460,77 @@ func (z *zadigImpl) handleFeature(req model.AllocatorReq) error {
 	}
 	if namespace == nil {
 		// 创建 ns，并部署服务
-		if env, err := z.CreateSubEnv(); err != nil {
+		env, err := z.CreateSubEnv()
+		if err != nil {
 			z.log.Warn("create namespace failed.", zap.String("namespace", env))
 			return err
-		} else {
-			// 默认部署 backoffice-v1-web-app
-			if taskId, err := z.DeployService(model.DeployServiceReq{
-				SubEnv:      env,
-				ServiceName: "backoffice-v1-web",
-				BranchName:  "feature/INF-666",
-				GithubActor: "jeremy2566",
-			}); err != nil {
-				// 加入 redis 缓存
-				if err := z.rdb.SaveNamespace(env, model.DaoNamespace{
-					SubEnv:   env,
-					UpdateBy: req.GithubActor,
-					Branch:   branchName,
-				}); err != nil {
-					z.log.Warn("save namespace failed.", zap.String("namespace", env))
-				}
-				z.log.Warn("deploy service failed.", zap.String("service", "backoffice-v1-web-app"))
-				return err
-			} else {
-				// 加入 redis 缓存
-				if err := z.rdb.SaveNamespace(env, model.DaoNamespace{
-					SubEnv:      env,
-					UpdateBy:    req.GithubActor,
-					Branch:      branchName,
-					ServiceName: []string{"backoffice-v1-web-app"},
-				}); err != nil {
-					z.log.Warn("save namespace failed.", zap.String("namespace", env))
-				}
-				z.log.Info("deploy service.", zap.String("service", "backoffice-v1-web"), zap.Int("taskId", taskId))
-			}
-
-			// 添加新服务到 ns
-			if err := z.AddService(model.AddServiceReq{
-				SubEnv:      env,
-				ServiceName: req.ServiceName,
-			}); err != nil {
-				z.log.Warn("add service failed.", zap.String("service", req.ServiceName))
-				return err
-			}
-			if err := z.rdb.SaveNamespace(env, model.DaoNamespace{
-				SubEnv:      env,
-				UpdateBy:    req.GithubActor,
-				Branch:      branchName,
-				ServiceName: []string{req.ServiceName},
-			}); err != nil {
-				z.log.Warn("save namespace failed.", zap.String("namespace", env))
-			}
-			if taskId, err := z.DeployService(model.DeployServiceReq{
-				SubEnv:      env,
-				ServiceName: req.ServiceName,
-				BranchName:  branchName,
-				GithubActor: "jeremy2566",
-			}); err != nil {
-				z.log.Warn("deploy service failed.", zap.String("service", req.ServiceName))
-			} else {
-				z.log.Info("deploy service.", zap.String("service", req.ServiceName), zap.Int("taskId", taskId))
-			}
 		}
-	} else {
-		// 添加新服务到 ns
-		if err := z.AddService(model.AddServiceReq{
-			SubEnv:      namespace.SubEnv,
-			ServiceName: req.ServiceName,
+		taskId, err := z.DeployService(model.DeployServiceReq{
+			SubEnv:      env,
+			ServiceName: "backoffice-v1-web",
+			BranchName:  "feature/INF-666",
+			GithubActor: "jeremy2566",
+		})
+		if err != nil {
+			z.log.Warn("deploy service failed.", zap.String("service", "backoffice-v1-web-app"))
+		} else {
+			z.log.Info("deploy service success.", zap.String("service_name", "backoffice-v1-web-app"), zap.Int("taskId", taskId))
+		}
+		// 加入 redis 缓存
+		if err := z.rdb.SaveNamespace(env, model.DaoNamespace{
+			SubEnv:      env,
+			UpdateBy:    req.GithubActor,
+			Branch:      branchName,
+			ServiceName: []string{"backoffice-v1-web-app"},
 		}); err != nil {
+			z.log.Warn("save namespace failed.", zap.String("namespace", env))
+		} else {
+			z.log.Info("deploy service success.", zap.String("service_name", req.ServiceName))
+		}
+		err = z.AddService(model.AddServiceReq{
+			SubEnv:      env,
+			ServiceName: req.ServiceName,
+		})
+		// 添加新服务到 ns
+		if err != nil {
 			z.log.Warn("add service failed.", zap.String("service", req.ServiceName))
 			return err
 		}
-
-		if err := z.rdb.SaveNamespace(namespace.SubEnv, model.DaoNamespace{
-			SubEnv:      namespace.SubEnv,
-			UpdateBy:    req.GithubActor,
-			Branch:      branchName,
-			ServiceName: []string{req.ServiceName},
-		}); err != nil {
-			z.log.Warn("save namespace failed.", zap.String("namespace", namespace.SubEnv))
+		taskId, err = z.DeployService(model.DeployServiceReq{
+			SubEnv:      env,
+			ServiceName: req.ServiceName,
+			BranchName:  branchName,
+			GithubActor: "jeremy2566",
+		})
+		if err != nil {
+			z.log.Warn("deploy service failed.", zap.String("service_name", req.ServiceName), zap.Int("taskId", taskId))
+		} else {
+			z.log.Info("deploy service success.", zap.String("service_name", req.ServiceName), zap.Int("taskId", taskId))
 		}
-		if taskId, err := z.DeployService(model.DeployServiceReq{
+		z.rdb.UpdateServiceByKey(env, req.ServiceName)
+	} else {
+		// 添加新服务到 ns
+		err := z.AddService(model.AddServiceReq{
+			SubEnv:      namespace.SubEnv,
+			ServiceName: req.ServiceName,
+		})
+		if err != nil {
+			z.log.Warn("add service failed.", zap.String("service", req.ServiceName))
+			return err
+		}
+		taskId, err := z.DeployService(model.DeployServiceReq{
 			SubEnv:      namespace.SubEnv,
 			ServiceName: req.ServiceName,
 			BranchName:  branchName,
 			GithubActor: "jeremy2566",
-		}); err != nil {
-			z.log.Warn("deploy service failed.", zap.String("service", req.ServiceName))
+		})
+		if err != nil {
+			z.log.Warn("deploy service failed.", zap.String("service_name", req.ServiceName), zap.Int("taskId", taskId))
 		} else {
-			z.log.Info("deploy service.", zap.String("service", req.ServiceName), zap.Int("taskId", taskId))
+			z.log.Info("deploy service success.", zap.String("service_name", req.ServiceName), zap.Int("taskId", taskId))
 		}
-
+		z.rdb.UpdateServiceByKey(namespace.SubEnv, req.ServiceName)
 	}
-
 	return nil
 }
 
