@@ -10,13 +10,43 @@ import (
 	"resty.dev/v3"
 )
 
+var _ Lark = &larkImpl{}
+
 type Lark interface {
 	Sender(req model.SenderReq)
+	DomainMonitor(req model.SenderLarkReq) error
 }
 
 type larkImpl struct {
 	log    *zap.Logger
 	client *resty.Client
+}
+
+type sender struct {
+	ReceiveId string `json:"receiveId"`
+	MsgType   string `json:"msg_type"`
+	Content   string `json:"content"`
+}
+
+func (l *larkImpl) DomainMonitor(req model.SenderLarkReq) error {
+	token, err := l.GetTenantToken()
+	if err != nil {
+		return err
+	}
+	content, _ := json.Marshal(req.Content)
+
+	body := sender{
+		ReceiveId: req.ReceiveId,
+		MsgType:   req.MsgType,
+		Content:   string(content),
+	}
+
+	resp, err := l.client.R().
+		SetBody(body).
+		SetAuthToken(token).
+		Post(fmt.Sprintf("/open-apis/im/v1/messages?receive_id_type=%s", req.ReceiveIdType))
+	fmt.Println(resp)
+	return nil
 }
 
 func (l *larkImpl) Sender(req model.SenderReq) {

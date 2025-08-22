@@ -38,3 +38,26 @@ type TemplateVariableReq struct {
 	Service        string `json:"service"`
 	Branch         string `json:"branch"`
 }
+
+type DomainMonitorReq struct {
+	Success   bool
+	TmplId    string
+	ReceiveId string // 群聊 id
+	params    map[string]string
+}
+
+type SenderLarkReq struct {
+	ReceiveIdType string
+	ReceiveId     string
+	MsgType       string
+	Content       ContentLarkReq
+}
+
+type DataLarkReq struct {
+	TemplateID string `json:"template_id"`
+}
+
+type ContentLarkReq struct {
+	Type string      `json:"type"`
+	Data DataLarkReq `json:"data"`
+}

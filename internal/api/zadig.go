@@ -90,3 +90,22 @@ func (a Api) DeleteSubEnv(c *gin.Context) {
 		"msg": "success",
 	})
 }
+
+func (a Api) Webhook(c *gin.Context) {
+	var cb model.Callback
+	if err := c.ShouldBindJSON(&cb); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	err := a.zadig.Webhook(cb)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"code": -1,
+			"msg":  err.Error(),
+		})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"msg": "success",
+	})
+}

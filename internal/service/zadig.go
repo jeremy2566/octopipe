@@ -25,6 +25,7 @@ type Zadig interface {
 	DeployService(req model.DeployServiceReq) (int, error)
 	AddService(req model.AddServiceReq) error
 	DeleteSubEnv(env string) error
+	Webhook(cb model.Callback) error
 }
 
 type zadigImpl struct {
@@ -683,4 +684,44 @@ func (z *zadigImpl) GetServiceCharts() map[string]string {
 		ret[info.ServiceName] = info.ChartVersion
 	}
 	return ret
+}
+
+func (z *zadigImpl) Webhook(cb model.Callback) error {
+	z.log.Info("received webhook callback",
+		zap.String("workflow_name", cb.Workflow.WorkflowName),
+		zap.String("status", cb.Workflow.Status),
+		zap.Int("task_id", cb.Workflow.TaskID),
+		zap.String("project", cb.Workflow.ProjectName))
+
+	// 根据不同的 workflow name 路由到不同的处理器
+	switch cb.Workflow.WorkflowName {
+	case "domain-monitor":
+		return z.domainMonitor(cb)
+	default:
+		z.log.Warn("unknown workflow name, using default handler",
+			zap.String("workflow_name", cb.Workflow.WorkflowName))
+	}
+	return nil
+}
+
+func (z *zadigImpl) domainMonitor(cb model.Callback) error {
+	//var success bool
+	//var tempId string
+	//if cb.Workflow.Status == "passed" {
+	//	success = true
+	//	tempId = "ctp_AAzXWvvEaFd5"
+	//} else {
+	//	success = false
+	//}
+	//
+	//req := model.SenderLarkReq{
+	//	ReceiveId: "oc_b97835f507ec3d6648a3445bdf85d549",
+	//	MsgType:   "interactive",
+	//	Content: model.ContentReq{
+	//		Type: "template",
+	//		Data: model.DataReq{},
+	//	},
+	//}
+	//return z.lark.DomainMonitor(req)
+	return nil
 }

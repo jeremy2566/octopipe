@@ -69,3 +69,21 @@ func TestHandler_Sender_Failed_Namespace(t *testing.T) {
 	}
 	l.Sender(req)
 }
+
+func TestHandler_DomainMonitor(t *testing.T) {
+	req := model.SenderLarkReq{
+		ReceiveIdType: "chat_id",
+		ReceiveId:     "oc_b97835f507ec3d6648a3445bdf85d549",
+		MsgType:       "interactive",
+		Content: model.ContentLarkReq{
+			Type: "template",
+			Data: model.DataLarkReq{
+				TemplateID: "ctp_AAzXWvvEaFd5",
+			},
+		},
+	}
+	log, _ := zap.NewDevelopment()
+	client := resty.New().SetRetryCount(3).SetRetryWaitTime(1 * time.Second).SetRetryMaxWaitTime(5 * time.Second)
+	l := NewLark(log, client)
+	l.DomainMonitor(req)
+}
