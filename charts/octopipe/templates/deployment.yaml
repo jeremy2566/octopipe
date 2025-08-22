@@ -38,6 +38,10 @@ spec:
               containerPort: {{ .Values.service.port }}
               protocol: TCP
           env:
+            - name: REDIS_PWD
+              value: xFCk7D1KRa
+            - name: REDIS_URL
+              value: octopipe-redis-master:6379
             {{- if .Values.octopipe.users }}
             - name: USERS_LIST
               value: '{{ .Values.octopipe.users | toJson }}'

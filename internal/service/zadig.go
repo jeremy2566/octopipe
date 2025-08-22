@@ -386,10 +386,15 @@ func (z *zadigImpl) DeployService(req model.DeployServiceReq) (int, error) {
 func NewZadig(log *zap.Logger, client *resty.Client) Zadig {
 	client.SetBaseURL("https://zadigx.shub.us").
 		SetAuthToken("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiUnVpLkppYW5nIiwiZW1haWwiOiJydWkuamlhbmdAc3RvcmVodWIuY29tIiwidWlkIjoiMzBjYmZiZTAtNmYyNi0xMWVmLWEwYzEtNDI0Y2Q2NGY0MTZhIiwicHJlZmVycmVkX3VzZXJuYW1lIjoiRGVyYWl2ZW4iLCJmZWRlcmF0ZWRfY2xhaW1zIjp7ImNvbm5lY3Rvcl9pZCI6ImdpdGh1YiIsInVzZXJfaWQiOiJEZXJhaXZlbiJ9LCJhdWQiOiJ6YWRpZyIsImV4cCI6NDg3OTUzOTU5Nn0.28147NOIPyGsFfuasHwHJlWvGAKSXCtn1oCD_J7vulM")
+
 	return &zadigImpl{
 		log:    log,
 		client: client,
 		rdb:    dao.NewRdb(log),
+		lark: NewLark(
+			log,
+			resty.New().SetRetryCount(3).SetRetryWaitTime(1*time.Second).SetRetryMaxWaitTime(5*time.Second),
+		),
 	}
 }
 
@@ -705,23 +710,49 @@ func (z *zadigImpl) Webhook(cb model.Callback) error {
 }
 
 func (z *zadigImpl) domainMonitor(cb model.Callback) error {
-	//var success bool
-	//var tempId string
-	//if cb.Workflow.Status == "passed" {
-	//	success = true
-	//	tempId = "ctp_AAzXWvvEaFd5"
-	//} else {
-	//	success = false
-	//}
-	//
-	//req := model.SenderLarkReq{
-	//	ReceiveId: "oc_b97835f507ec3d6648a3445bdf85d549",
-	//	MsgType:   "interactive",
-	//	Content: model.ContentReq{
-	//		Type: "template",
-	//		Data: model.DataReq{},
-	//	},
-	//}
-	//return z.lark.DomainMonitor(req)
-	return nil
+	switch cb.Workflow.Status {
+	case "passed":
+		return z.handleDomainMonitorPassed()
+	default:
+		defaultStage := cb.Workflow.Stages[0]
+		domains := make([]string, len(defaultStage.Jobs))
+		for _, j := range defaultStage.Jobs {
+			displayName := j.DisplayName
+			status := j.Status
+			if status == "failed" {
+				domains = append(domains, displayName)
+			}
+		}
+		return z.handleDomainMonitorDefault(domains)
+	}
+}
+
+func (z *zadigImpl) handleDomainMonitorPassed() error {
+	req := model.SendInteractiveReq{
+		TemplateId:  "ctp_AAzXWvvEaFd5",
+		Target:      model.Group,
+		ReceiveName: "Devops Notification",
+		Params: map[string]string{
+			"title":   "域名监控运行成功",
+			"content": "所有域名运行正常，且没有在 30 天内到期的域名，无需任何操作。",
+		},
+	}
+	return z.lark.SendInteractive(req)
+}
+
+func (z *zadigImpl) handleDomainMonitorDefault(domains []string) error {
+	content := ""
+	for _, domain := range domains {
+		content += "请关注：" + domain + "\n"
+	}
+	req := model.SendInteractiveReq{
+		TemplateId:  "ctp_AAzXaSRdmtsX",
+		Target:      model.Group,
+		ReceiveName: "Devops Notification",
+		Params: map[string]string{
+			"title":   "域名即将过期提醒",
+			"content": content,
+		},
+	}
+	return z.lark.SendInteractive(req)
 }

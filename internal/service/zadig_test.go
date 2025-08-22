@@ -13,7 +13,7 @@ import (
 func TestZadigImpl_GetTestEnvList(t *testing.T) {
 	log, _ := zap.NewDevelopment()
 	client := resty.New().SetRetryCount(3).SetRetryWaitTime(1 * time.Second).SetRetryMaxWaitTime(5 * time.Second)
-
+	client.SetDebug(true)
 	z := NewZadig(log, client)
 	envs, _ := z.GetTestEnvList("fat-base-envrionment")
 	for _, env := range envs {
@@ -62,4 +62,20 @@ func TestCreate_Namespace_E2E(t *testing.T) {
 		BranchName:  "feature/INF-666",
 		GithubActor: "jeremy2566",
 	})
+}
+
+func TestZadigImpl_handleDomainMonitorDefault(t *testing.T) {
+	log, _ := zap.NewDevelopment()
+	client := resty.New().SetRetryCount(3).SetRetryWaitTime(1 * time.Second).SetRetryMaxWaitTime(5 * time.Second)
+
+	z := NewZadig(log, client).(*zadigImpl)
+	_ = z.handleDomainMonitorDefault([]string{"storehub.com"})
+}
+
+func TestZadigImpl_handleDomainMonitorPassed(t *testing.T) {
+	log, _ := zap.NewDevelopment()
+	client := resty.New().SetRetryCount(3).SetRetryWaitTime(1 * time.Second).SetRetryMaxWaitTime(5 * time.Second)
+
+	z := NewZadig(log, client).(*zadigImpl)
+	_ = z.handleDomainMonitorPassed()
 }
