@@ -86,19 +86,154 @@ func (z *zadigImpl) AddService(req model.AddServiceReq) error {
 	return nil
 }
 
-// trans 服务名转 service name, service module, repo name 和 build name
+// trans 服务名转 service_name, service_module, repo_name 和 build_name
 func (z *zadigImpl) trans(serviceName string) (string, string, string, string) {
 	switch serviceName {
-	case "backoffice-v1-web":
-		return "backoffice-v1-web-app", "backoffice-v1-web", "backoffice-v1-web", "backoffice-v1-web"
+	case "accounting-cleartax-connector":
+		return "account-cleartax-connector", "account-cleartax-connector", "accounting-cleartax-connector", "account-cleartax-connector"
+	case "app_push-infra-svc":
+		return "apppush-infra", "apppush-infra", "app_push-infra-svc", "fat-base-envrionment-build-apppush-infra-1"
+	case "auth-api":
+		return "auth-api", "auth-api", "auth-api", "fat-base-envrionment-build-auth-api-1"
+	case "backoffice-v2-bff":
+		return "backoffice-v2-bff", "backoffice-v2-bff", "backoffice-v2-bff", "fat-base-envrionment-build-backoffice-v2-bff-1"
+	case "beep-v1-web":
+		return "beep-v1-web", "beep-v1-web", "beep-v1-web", "fat-base-envrionment-build-beep-v1-web-1"
+	case "campaign-svc":
+		return "campaign-svc", "campaign-svc", "campaign-svc", "fat-base-envrionment-build-campaign-svc-1"
+	case "core-api":
+		return "core-api", "core-api", "core-api", "fat-base-envrionment-build-core-api-1"
+	case "crm-api":
+		return "crm-api", "crm-api", "crm-api", "fat-base-envrionment-build-crm-api-1"
+	case "customer-svc":
+		return "customer-svc", "customer-svc", "customers-svc", "fat-base-envrionment-build-customer-svc-1"
+	case "e-invoice_adapter-svc":
+		return "e-invoice-adapter-svc", "e-invoice-adapter-svc", "e-invoice_adapter-svc", "e-invoice-test33"
+	case "ecommerce-v1-api":
+		return "ecommerce-v1-api", "ecommerce-v1-api", "ecommerce-v1-api", "fat-base-envrionment-build-ecommerce-v1-api-1"
+	case "ecommerce-v1-web":
+		return "ecommerce-v1-web", "ecommerce-v1-web", "ecommerce-v1-web", "fat-base-envrionment-build-ecommerce-v1-web-1"
+	case "employee-domain-svc":
+		return "employee-domain-svc", "employee-domain-svc", "employee-domain-svc", "fat-base-envrionment-build-employee-domain-svc-1"
+	case "ist-v1-web":
+		return "ist-v1-web", "ist-v1-web", "ist-v1-web", "fat-base-envrionment-build-ist-v1-web-1"
+	case "logistics-app-svc":
+		return "logistics-app-svc", "logistics-app-svc", "logistics-app-svc", "fat-base-envrionment-build-logistics-app-svc-1"
+	case "merchant-domain-svc":
+		return "merchant-domain-svc", "merchant-domain-svc", "merchant-domain-svc", "fat-base-envrionment-build-merchant-domain-svc-1"
+	case "messenger_apps-infra-svc":
+		return "messenger-apps-infra-svc", "messenger-apps-infra-svc", "messenger_apps-infra-svc", "fat-base-envrionment-build-messenger-apps-infra-svc-1"
+	case "online_store-domain-svc":
+		return "online-store-domain-svc", "online-store-domain-svc", "online_store-domain-svc", "fat-base-envrionment-build-online-store-domain-svc-1"
+	case "ost-v1-web":
+		return "ost-v1-web", "ost-v1-web", "ost-v1-web", "fat-base-envrionment-build-ost-v1-web-1"
+	case "otp-api":
+		return "otp-api", "otp-api", "otp-api", "fat-base-envrionment-build-otp-api-1"
+	case "":
+		return "", "", "", ""
 	default:
 		return serviceName, serviceName, serviceName, serviceName
 	}
 }
 
+// transCEC core-event-consumer 服务名转 service_name, service_module, repo_name 和 build_name
+func (z *zadigImpl) transCEC(branchName string) (string, string, string, string) {
+	switch {
+	case strings.Contains(branchName, "beep"):
+		return "core-event-consumer-beep", "core-event-consumer-beep", "core-event-consumer", "fat-base-envrionment-build-core-event-consumer-beep-1"
+	case strings.Contains(branchName, "beepapp"):
+		return "core-event-consumer-beepapp", "core-event-consumer-beepapp", "core-event-consumer", "fat-base-envrionment-build-core-event-consumer-beepapp-1"
+	case strings.Contains(branchName, "bo"):
+		return "core-event-consumer-bo", "core-event-consumer-bo", "core-event-consumer", "fat-base-envrionment-build-core-event-consumer-bo-1"
+	case strings.Contains(branchName, "msg"):
+		return "core-event-consumer-msg", "core-event-consumer-msg", "core-event-consumer", "core-event-consumer-msg-test33"
+	case strings.Contains(branchName, "sms"):
+		return "core-event-consumer-sms", "core-event-consumer-sms", "core-event-consumer", "core-event-consumer-sms-test33"
+	case strings.Contains(branchName, "otpsms"):
+		return "core-event-consumer-otpsms", "core-event-consumer-otpsms", "core-event-consumer", "core-event-consumer-otpsms-test33"
+	case strings.Contains(branchName, "payment"):
+		return "core-event-consumer-payment", "core-event-consumer-payment", "core-event-consumer", "fat-base-envrionment-build-core-event-consumer-payment-1"
+	case strings.Contains(branchName, "zendesk"):
+		return "core-event-consumer-zendesk", "core-event-consumer-zendesk", "core-event-consumer", "core-event-consumer-zendesk-test33"
+	default:
+		z.log.Warn("unknown branch name", zap.String("branchName", branchName))
+		return "", "", "", ""
+	}
+}
+
+// transOPS online_purchase-svc 服务名转 service_name, service_module, repo_name 和 build_name
+func (z *zadigImpl) transOPS(branchName string) (string, string, string, string) {
+	switch {
+	case strings.Contains(branchName, "cronjob"):
+		return "online-purchase-svc-cronjob", "online-purchase-svc-cronjob", "online_purchase-svc", "online-purchase-svc-cronjob-test33"
+	default:
+		return "online-purchase-svc", "online-purchase-svc", "online_purchase-svc", "fat-base-envrionment-build-online-purchase-svc-1"
+	}
+}
+
+// transIS inventory-svc 服务名转 service_name, service_module, repo_name 和 build_name
+func (z *zadigImpl) transIS(branchName string) (string, string, string, string) {
+	switch {
+	case strings.Contains(branchName, "stockjob"):
+		return "inventory-stockjob", "inventory-domain-svc", "inventory-svc", "inventory-stockjob-test33"
+	default:
+		return "inventory-domain-svc", "inventory-domain-svc", "inventory-svc", "fat-base-envrionment-build-inventory-domain-svc-1"
+	}
+}
+
+// transEVC ecommerce-v1-consumer 服务名转 service_name, service_module, repo_name 和 build_name
+func (z *zadigImpl) transEVC(branchName string) (string, string, string, string) {
+	switch {
+	case strings.Contains(branchName, "checkout"):
+		return "ec-v1-consumer-checkout", "ec-v1-consumer-checkout", "ecommerce-v1-consumer", "fat-base-envrionment-build-ec-v1-consumer-checkout-1"
+	default:
+		return "ec-v1-consumer", "ec-v1-consumer", "ecommerce-v1-consumer", "fat-base-envrionment-build-ec-v1-consumer-1"
+	}
+}
+
+// transBoV1Web 服务名转 service_name, service_module, repo_name 和 build_name
+func (z *zadigImpl) transBoV1Web(branchName string) (string, string, string, string) {
+	switch {
+	case strings.Contains(branchName, "addonsjob"):
+		return "backoffice-v1-web-addonsjob", "backoffice-v1-web", "backoffice-v1-web", "backoffice-v1-web-addonsjob"
+	case strings.Contains(branchName, "api"):
+		return "backoffice-v1-web-api", "backoffice-v1-web", "backoffice-v1-web", "backoffice-v1-web-api-test33"
+	case strings.Contains(branchName, "app"):
+		return "backoffice-v1-web-app", "backoffice-v1-web", "backoffice-v1-web", "fat-base-envrionment-build-backoffice-v1-web-1"
+	case strings.Contains(branchName, "exportjob"):
+		return "backoffice-v1-web-exportjob", "backoffice-v1-web-exportjob", "backoffice-v1-web", "fat-base-envrionment-build-backoffice-v1-web-exportjob"
+	case strings.Contains(branchName, "importjob"):
+		return "backoffice-v1-web-importjob", "backoffice-v1-web", "backoffice-v1-web", "backoffice-v1-web-importjob-test33"
+	case strings.Contains(branchName, "migratejob"):
+		return "backoffice-v1-web-migratejob", "backoffice-v1-web-migratejob", "backoffice-v1-web", "backoffice-v1-web-migratejob-test33"
+	case strings.Contains(branchName, "qbojob"):
+		return "backoffice-v1-web-qbojob", "backoffice-v1-web", "backoffice-v1-web", "fat-base-envrionment-build-backoffice-v1-web-1"
+	case strings.Contains(branchName, "running"):
+		return "backoffice-v1-web-runningjob", "backoffice-v1-web", "backoffice-v1-web", "backoffice-v1-web-runningjob-test33"
+	case strings.Contains(branchName, ""):
+		return "backoffice-v1-web-scheduledjob", "backoffice-v1-web", "backoffice-v1-web", "backoffice-v1-web-schedule-job"
+	default:
+		z.log.Warn("unknown branch name", zap.String("branchName", branchName))
+		return "", "", "", ""
+	}
+}
+
 func (z *zadigImpl) DeployService(req model.DeployServiceReq) (int, error) {
 	z.log.Info("deploy service.", zap.Any("params", req))
-	sn, sm, rn, bn := z.trans(req.ServiceName)
+	var sn, sm, rn, bn string
+	if req.ServiceName == "backoffice-v1-web" {
+		sn, sm, rn, bn = z.transBoV1Web(req.BranchName)
+	} else if req.ServiceName == "core-event-consumer" {
+		sn, sm, rn, bn = z.transCEC(req.BranchName)
+	} else if req.ServiceName == "ecommerce-v1-consumer" {
+		sn, sm, rn, bn = z.transEVC(req.BranchName)
+	} else if req.ServiceName == "inventory-svc" {
+		sn, sm, rn, bn = z.transIS(req.ServiceName)
+	} else if req.ServiceName == "online_purchase-svc" {
+		sn, sm, rn, bn = z.transOPS(req.ServiceName)
+	} else {
+		sn, sm, rn, bn = z.trans(req.ServiceName)
+	}
 
 	servicesReq := model.DeployServicesReq{
 		Name:        "test33",
@@ -321,7 +456,7 @@ func (z *zadigImpl) DeployService(req model.DeployServiceReq) (int, error) {
 								{
 									ServiceName:   sn,
 									ServiceModule: sm,
-									BuildName:     fmt.Sprintf("fat-base-envrionment-build-%s-1", bn),
+									BuildName:     bn,
 									KeyVals: []struct {
 										Key   string `json:"key"`
 										Value string `json:"value"`
