@@ -129,8 +129,40 @@ func (z *zadigImpl) trans(serviceName string) (string, string, string, string) {
 		return "ost-v1-web", "ost-v1-web", "ost-v1-web", "fat-base-envrionment-build-ost-v1-web-1"
 	case "otp-api":
 		return "otp-api", "otp-api", "otp-api", "fat-base-envrionment-build-otp-api-1"
-	case "":
-		return "", "", "", ""
+	case "payment-api":
+		return "payment-api", "payment-api", "payment-api", "fat-base-envrionment-build-payment-api-1"
+	case "payout-api":
+		return "payout-api", "payout-api", "payout-api", "fat-base-envrionment-build-payout-api-1"
+	case "pos-v3-bff":
+		return "pos-v3-bff", "pos-v3-bff", "pos-v3-bff", "fat-base-envrionment-build-pos-v3-bff-1"
+	case "product-domain-svc":
+		return "product-domain-svc", "product-domain-svc", "product-domain-svc", "fat-base-envrionment-build-product-domain-svc-1"
+	case "promotion-api":
+		return "promotion-api", "promotion-api", "promotion-api", "fat-base-envrionment-build-promotion-api-1"
+	case "promotion-svc":
+		return "promotion-svc", "promotion-svc", "promotion-svc", "fat-base-envrionment-build-promotion-svc-1"
+	case "realtime_event_broker-svc":
+		return "realtime-event-broker-svc", "realtime-event-broker-svc", "realtime_event_broker-svc", "realtime-event-broker-svc"
+	case "report-api":
+		return "report-api", "report-api", "report-api", "fat-base-envrionment-build-report-api-1"
+	case "shmanager-v1-bff":
+		return "shmanager-v1-bff", "shmanager-v1-bff", "shmanager-v1-bff", "fat-base-envrionment-build-shmanager-v1-bff-1"
+	case "sms-api":
+		return "sms-api", "sms-api", "sms-api", "fat-base-envrionment-build-sms-api-1"
+	case "subscription_adapter-infra-svc":
+		return "sub-adapter-infra-svc", "sub-adapter-infra-svc", "subscription_adapter-infra-svc", "fat-base-envrionment-build-sub-adapter-infra-svc-1"
+	case "subscription-app-svc":
+		return "subscription-app-svc", "subscription-app-svc", "subscription-app-svc", "fat-base-envrionment-build-subscription-app-svc-1"
+	case "3pl_adapter-infra-svc":
+		return "th3pl-adapter-infra-svc", "th3pl-adapter-infra-svc", "3pl_adapter-infra-svc", "fat-base-envrionment-build-th3pl-adapter-infra-svc-1"
+	case "3rd_party_food_delivery_adapter-svc":
+		return "thpfd-adapter", "thpfd-adapter", "3rd_party_food_delivery_adapter-svc", "fat-base-envrionment-build-thpfd-adapter-1"
+	case "user_preference-api":
+		return "user-preference-api", "user-preference-api", "user_preference-api", "user-preference-api-test33"
+	case "3p_webhook_adapter-infra-svc":
+		return "webhook-adapter-infra-svc", "webhook-adapter-infra-svc", "3p_webhook_adapter-infra-svc", "fat-base-envrionment-build-webhook-adapter-infra-svc-1"
+	case "webhook-svc":
+		return "webhook-svc", "webhook-svc", "webhook-svc", "fat-base-envrionment-build-webhook-svc-1"
 	default:
 		return serviceName, serviceName, serviceName, serviceName
 	}
