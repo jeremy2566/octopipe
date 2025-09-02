@@ -12,10 +12,10 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-# 交叉编译为 linux 平台，并生成静态链接的二进制文件
+# 交叉编译为 linux/amd64 平台，并生成静态链接的二进制文件
 # -a: 强制重新构建所有包
 # -ldflags "-w -s": 减小二进制文件体积
-RUN CGO_ENABLED=0 GOOS=linux go build -a -tags=purego -ldflags="-w -s -X 'github.com/jeremy2566/octopipe/pkg/version.VERSION=${VERSION}' -X 'github.com/jeremy2566/octopipe/pkg/version.REVISION=${REVISION}'" -o /octopipe .
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -tags=purego -ldflags="-w -s -X 'github.com/jeremy2566/octopipe/pkg/version.VERSION=${VERSION}' -X 'github.com/jeremy2566/octopipe/pkg/version.REVISION=${REVISION}'" -o /octopipe .
 
 # 第二阶段：构建一个最小化的最终镜像
 FROM alpine:latest
