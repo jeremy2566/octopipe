@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -52,11 +53,11 @@ func TestCreate_Namespace_E2E(t *testing.T) {
 		GithubActor: "jeremy2566",
 	})
 	log.Info("deploy service.", zap.Int("taskId", taskId))
-	z.AddService(model.AddServiceReq{
+	_ = z.AddService(model.AddServiceReq{
 		SubEnv:      subEnv,
 		ServiceName: "payment-api",
 	})
-	z.DeployService(model.DeployServiceReq{
+	taskId, _ = z.DeployService(model.DeployServiceReq{
 		SubEnv:      subEnv,
 		ServiceName: "payment-api",
 		BranchName:  "feature/INF-666",
@@ -78,4 +79,21 @@ func TestZadigImpl_handleDomainMonitorPassed(t *testing.T) {
 
 	z := NewZadig(log, client).(*zadigImpl)
 	_ = z.handleDomainMonitorPassed()
+}
+
+func TestZadigImpl_GetServiceCharts(t *testing.T) {
+	log, _ := zap.NewDevelopment()
+	client := resty.New().SetRetryCount(3).SetRetryWaitTime(1 * time.Second).SetRetryMaxWaitTime(5 * time.Second)
+
+	z := NewZadig(log, client).(*zadigImpl)
+	charts := z.GetServiceCharts()
+	for k, v := range charts {
+		log.Info(fmt.Sprintf("%s: %s", k, v))
+	}
+}
+
+func TestName(t *testing.T) {
+	branch := "feature/INF-333"
+	split := strings.Split(branch, "/")
+	println(split[len(split)-1])
 }

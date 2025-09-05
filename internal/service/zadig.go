@@ -638,10 +638,12 @@ func (z *zadigImpl) handleFeature(req model.AllocatorReq) error {
 			z.log.Warn("create namespace failed.", zap.String("namespace", env))
 			return err
 		}
+		split := strings.Split(branchName, "/")
+		num := split[len(split)-1]
 		taskId, err := z.DeployService(model.DeployServiceReq{
 			SubEnv:      env,
 			ServiceName: "backoffice-v1-web",
-			BranchName:  "feature/INF-666",
+			BranchName:  fmt.Sprintf("feature/app/%s", num),
 			GithubActor: "jeremy2566",
 		})
 		if err != nil {
@@ -855,6 +857,7 @@ func (z *zadigImpl) GetServiceCharts() map[string]string {
 	for _, info := range apiResponse.ChartInfos {
 		ret[info.ServiceName] = info.ChartVersion
 	}
+	ret["accounting-cleartax-connector"] = "4"
 	return ret
 }
 
