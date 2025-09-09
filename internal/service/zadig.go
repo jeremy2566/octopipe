@@ -925,16 +925,7 @@ func (z *zadigImpl) deploySubEnv(cb model.Callback) error {
 	case "passed":
 		return z.handleDeploySubEnvPassed(cb)
 	default:
-		defaultStage := cb.Workflow.Stages[0]
-		domains := make([]string, 0)
-		for _, j := range defaultStage.Jobs {
-			displayName := j.DisplayName
-			status := j.Status
-			if status == "failed" {
-				domains = append(domains, displayName)
-			}
-		}
-		return z.handleDomainMonitorDefault(domains)
+		return z.handleDeploySubEnvFailed(cb)
 	}
 }
 
@@ -946,6 +937,47 @@ func (z *zadigImpl) handleDomainMonitorPassed() error {
 		Params: map[string]string{
 			"title":   "域名监控运行成功",
 			"content": "所有域名运行正常，且没有在 30 天内到期的域名，无需任何操作。",
+		},
+	}
+	return z.lark.SendInteractive(req)
+}
+
+func (z *zadigImpl) handleDeploySubEnvFailed(cb model.Callback) error {
+	totalTime := cb.Workflow.EndTime - cb.Workflow.CreateTime
+	detail, err := z.GetTaskDetail("test33", cb.Workflow.TaskID)
+	if err != nil {
+		return err
+	}
+	var subEnv string
+	for _, param := range detail.Params {
+		if param.Name == "环境" {
+			subEnv = param.Value
+		}
+	}
+	var services, branches []string
+	for _, stage := range detail.Stages {
+		if stage.Name == "构建" {
+			for _, job := range stage.Jobs {
+				services = append(services, job.JobInfo.ServiceName)
+				for _, repo := range job.Spec.Repos {
+					branches = append(branches, repo.Branch)
+				}
+			}
+		}
+	}
+	req := model.SendInteractiveReq{
+		TemplateId:  "ctp_AAz7KDoTWE2h",
+		Target:      model.User,
+		ReceiveName: cb.Workflow.TaskCreatorEmail,
+		Params: map[string]string{
+			"project_name":    cb.Workflow.ProjectName,
+			"workflow_name":   "fat-base-workflow",
+			"workflow_number": strconv.Itoa(cb.Workflow.TaskID),
+			"duration":        fmt.Sprintf("%02d:%02d", totalTime/60, totalTime%60),
+			"host":            strings.ReplaceAll(cb.Workflow.DetailURL, "http://", "https://"),
+			"sub_env":         subEnv,
+			"service":         strings.Join(services, "\n"),
+			"branch":          strings.Join(branches, "\n"),
 		},
 	}
 	return z.lark.SendInteractive(req)
@@ -983,7 +1015,7 @@ func (z *zadigImpl) handleDeploySubEnvPassed(cb model.Callback) error {
 			"workflow_name":   "fat-base-workflow",
 			"workflow_number": strconv.Itoa(cb.Workflow.TaskID),
 			"duration":        fmt.Sprintf("%02d:%02d", totalTime/60, totalTime%60),
-			"host":            "",
+			"host":            strings.ReplaceAll(cb.Workflow.DetailURL, "http://", "https://"),
 			"sub_env":         subEnv,
 			"service":         strings.Join(services, "\n"),
 			"branch":          strings.Join(branches, "\n"),
