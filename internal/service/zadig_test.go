@@ -97,100 +97,148 @@ func TestZadigImpl_Webhook01(t *testing.T) {
     "object_kind": "workflow",
     "event": "workflow",
     "workflow": {
-        "task_id": 61,
-        "project_name": "devops-tools",
-        "project_display_name": "DevOps_Tools",
-        "workflow_name": "domain-monitor",
-        "workflow_display_name": "domain-monitor",
-        "status": "failed",
+        "task_id": 5732,
+        "project_name": "fat-base-envrionment",
+        "project_display_name": "fat-base-environment",
+        "workflow_name": "test33",
+        "workflow_display_name": "fat-base-workflow",
+        "status": "passed",
         "remark": "",
-        "detail_url": "http://zadigx.shub.us/v1/projects/detail/devops-tools/pipelines/custom/domain-monitor?display_name=domain-monitor",
+        "detail_url": "http://zadigx.shub.us/v1/projects/detail/fat-base-envrionment/pipelines/custom/test33?display_name=fat-base-workflow",
         "error": "",
-        "create_time": 1757387902,
-        "start_time": 1757387904,
-        "end_time": 1757387968,
+        "create_time": 1757401639,
+        "start_time": 1757401640,
+        "end_time": 1757401834,
         "stages": [
             {
-                "name": "default",
-                "status": "failed",
-                "start_time": 1757387904,
-                "end_time": 1757387968,
+                "name": "构建",
+                "status": "passed",
+                "start_time": 1757401640,
+                "end_time": 1757401834,
                 "jobs": [
                     {
-                        "name": "job-0-0-0-shub-us",
-                        "display_name": "shub-us",
-                        "type": "freestyle",
+                        "name": "job-1-0-0-构建发布",
+                        "display_name": "构建发布-backoffice-v1-web-app-backoffice-v1-web",
+                        "type": "zadig-build",
+                        "status": "passed",
+                        "start_time": 1757401640,
+                        "end_time": 1757401834,
+                        "error": "",
+                        "spec": {
+                            "repositories": [
+                                {
+                                    "source": "github",
+                                    "repo_owner": "storehubnet",
+                                    "repo_namespace": "storehubnet",
+                                    "repo_name": "backoffice-v1-web",
+                                    "branch": "release",
+                                    "prs": null,
+                                    "tag": "",
+                                    "author_name": "",
+                                    "commit_id": "0bee75101106e3eecc7825c34fc34e1a41195104",
+                                    "commit_url": "https://github.com/storehubnet/backoffice-v1-web/commit/0bee7510",
+                                    "commit_message": "Merge pull request #4240 from storehubnet/CB-14652-from-release\n\nfeat(CB-14652): Add GrowthBook whitelist control for promotions v2 page"
+                                }
+                            ],
+                            "image": "858157298152.dkr.ecr.ap-southeast-1.amazonaws.com/backoffice-v1-web:release-0bee7510"
+                        }
+                    }
+                ],
+                "error": ""
+            }
+        ],
+        "task_creator": "hanzhang",
+        "task_creator_id": "97882c5f-a266-11ef-aa9f-02058eeea235",
+        "task_creator_phone": "13325666101",
+        "task_creator_email": "jeremy.zhang@storehub.com",
+        "task_type": "workflow"
+    }
+}`
+	var cb model.Callback
+	json.Unmarshal([]byte(callback), &cb)
+	log, _ := zap.NewDevelopment()
+	client := resty.New().SetRetryCount(3).SetRetryWaitTime(1 * time.Second).SetRetryMaxWaitTime(5 * time.Second)
+
+	z := NewZadig(log, client).(*zadigImpl)
+
+	_ = z.Webhook(cb)
+}
+
+func TestZadigImpl_Webhook02(t *testing.T) {
+	callback := `{
+    "object_kind": "workflow",
+    "event": "workflow",
+    "workflow": {
+        "task_id": 5734,
+        "project_name": "fat-base-envrionment",
+        "project_display_name": "fat-base-environment",
+        "workflow_name": "test33",
+        "workflow_display_name": "fat-base-workflow",
+        "status": "passed",
+        "remark": "",
+        "detail_url": "http://zadigx.shub.us/v1/projects/detail/fat-base-envrionment/pipelines/custom/test33?display_name=fat-base-workflow",
+        "error": "",
+        "create_time": 1757403005,
+        "start_time": 1757403006,
+        "end_time": 1757403163,
+        "stages": [
+            {
+                "name": "构建",
+                "status": "failed",
+                "start_time": 1757403006,
+                "end_time": 1757403163,
+                "jobs": [
+                    {
+                        "name": "job-1-0-0-构建发布",
+                        "display_name": "构建发布-backoffice-v1-web-app-backoffice-v1-web",
+                        "type": "zadig-build",
                         "status": "failed",
-                        "start_time": 1757387904,
-                        "end_time": 1757387909,
-                        "error": "waitJobStart: pod failed, jobName:domain-monitor-61-krkw2, podName:domain-monitor-61-krkw2-7d4xt\nconditions info: type:PodReadyToStartContainers, status:False, reason:, message:\ntype:Initialized, status:True, reason:, message:\ntype:Ready, status:False, reason:PodFailed, message:\ntype:ContainersReady, status:False, reason:PodFailed, message:\ntype:PodScheduled, status:True, reason:, message:\n",
-                        "spec": {
-                            "repositories": null,
-                            "image": ""
-                        }
-                    },
-                    {
-                        "name": "job-0-1-0-storehubhq-com",
-                        "display_name": "storehubhq-com",
-                        "type": "freestyle",
-                        "status": "passed",
-                        "start_time": 1757387904,
-                        "end_time": 1757387925,
+                        "start_time": 1757403006,
+                        "end_time": 1757403023,
                         "error": "",
                         "spec": {
-                            "repositories": null,
+                            "repositories": [
+                                {
+                                    "source": "github",
+                                    "repo_owner": "storehubnet",
+                                    "repo_namespace": "storehubnet",
+                                    "repo_name": "backoffice-v1-web",
+                                    "branch": "k8s-pro-test",
+                                    "prs": null,
+                                    "tag": "",
+                                    "author_name": "",
+                                    "commit_id": "eb2bf5924c1c2b8b6916c9b4ff57405e12db449c",
+                                    "commit_url": "https://github.com/storehubnet/backoffice-v1-web/commit/eb2bf592",
+                                    "commit_message": "Edit domain"
+                                }
+                            ],
                             "image": ""
                         }
                     },
                     {
-                        "name": "job-0-2-0-bpit-me",
-                        "display_name": "bpit-me",
-                        "type": "freestyle",
+                        "name": "job-1-0-1-构建发布",
+                        "display_name": "构建发布-core-api-core-api",
+                        "type": "zadig-build",
                         "status": "failed",
-                        "start_time": 1757387904,
-                        "end_time": 1757387908,
-                        "error": "waitJobStart: pod failed, jobName:domain-monitor-61-lvskg, podName:domain-monitor-61-lvskg-9x89c\nconditions info: type:PodReadyToStartContainers, status:False, reason:, message:\ntype:Initialized, status:True, reason:, message:\ntype:Ready, status:False, reason:PodFailed, message:\ntype:ContainersReady, status:False, reason:PodFailed, message:\ntype:PodScheduled, status:True, reason:, message:\n",
-                        "spec": {
-                            "repositories": null,
-                            "image": ""
-                        }
-                    },
-                    {
-                        "name": "job-0-3-0-mymyhub-com",
-                        "display_name": "mymyhub-com",
-                        "type": "freestyle",
-                        "status": "passed",
-                        "start_time": 1757387904,
-                        "end_time": 1757387968,
+                        "start_time": 1757403006,
+                        "end_time": 1757403163,
                         "error": "",
                         "spec": {
-                            "repositories": null,
-                            "image": ""
-                        }
-                    },
-                    {
-                        "name": "job-0-4-0-beepit-com",
-                        "display_name": "beepit-com",
-                        "type": "freestyle",
-                        "status": "passed",
-                        "start_time": 1757387904,
-                        "end_time": 1757387960,
-                        "error": "",
-                        "spec": {
-                            "repositories": null,
-                            "image": ""
-                        }
-                    },
-                    {
-                        "name": "job-0-5-0-storehub-com",
-                        "display_name": "storehub-com",
-                        "type": "freestyle",
-                        "status": "passed",
-                        "start_time": 1757387904,
-                        "end_time": 1757387954,
-                        "error": "",
-                        "spec": {
-                            "repositories": null,
+                            "repositories": [
+                                {
+                                    "source": "github",
+                                    "repo_owner": "storehubnet",
+                                    "repo_namespace": "storehubnet",
+                                    "repo_name": "core-api",
+                                    "branch": "develop",
+                                    "prs": null,
+                                    "tag": "",
+                                    "author_name": "",
+                                    "commit_id": "50bdf7f4b40ba126f6ab2d49dd3e482e49bf1079",
+                                    "commit_url": "https://github.com/storehubnet/core-api/commit/50bdf7f4",
+                                    "commit_message": "Merge pull request #587 from storehubnet/autoupdatesubmodule\n\nauto update submodule"
+                                }
+                            ],
                             "image": ""
                         }
                     }
@@ -213,5 +261,113 @@ func TestZadigImpl_Webhook01(t *testing.T) {
 	z := NewZadig(log, client).(*zadigImpl)
 
 	_ = z.Webhook(cb)
+}
 
+func TestZadigImpl_GetTaskDetail(t *testing.T) {
+	log, _ := zap.NewDevelopment()
+	client := resty.New().SetRetryCount(3).SetRetryWaitTime(1 * time.Second).SetRetryMaxWaitTime(5 * time.Second)
+
+	z := NewZadig(log, client)
+	resp, _ := z.GetTaskDetail("test33", 5731)
+	fmt.Println(resp)
+}
+
+func TestZadigImpl_handleDeploySubEnvPassed(t *testing.T) {
+	callback := `{
+    "object_kind": "workflow",
+    "event": "workflow",
+    "workflow": {
+        "task_id": 5734,
+        "project_name": "fat-base-envrionment",
+        "project_display_name": "fat-base-environment",
+        "workflow_name": "test33",
+        "workflow_display_name": "fat-base-workflow",
+        "status": "passed",
+        "remark": "",
+        "detail_url": "http://zadigx.shub.us/v1/projects/detail/fat-base-envrionment/pipelines/custom/test33?display_name=fat-base-workflow",
+        "error": "",
+        "create_time": 1757403005,
+        "start_time": 1757403006,
+        "end_time": 1757403163,
+        "stages": [
+            {
+                "name": "构建",
+                "status": "failed",
+                "start_time": 1757403006,
+                "end_time": 1757403163,
+                "jobs": [
+                    {
+                        "name": "job-1-0-0-构建发布",
+                        "display_name": "构建发布-backoffice-v1-web-app-backoffice-v1-web",
+                        "type": "zadig-build",
+                        "status": "failed",
+                        "start_time": 1757403006,
+                        "end_time": 1757403023,
+                        "error": "",
+                        "spec": {
+                            "repositories": [
+                                {
+                                    "source": "github",
+                                    "repo_owner": "storehubnet",
+                                    "repo_namespace": "storehubnet",
+                                    "repo_name": "backoffice-v1-web",
+                                    "branch": "k8s-pro-test",
+                                    "prs": null,
+                                    "tag": "",
+                                    "author_name": "",
+                                    "commit_id": "eb2bf5924c1c2b8b6916c9b4ff57405e12db449c",
+                                    "commit_url": "https://github.com/storehubnet/backoffice-v1-web/commit/eb2bf592",
+                                    "commit_message": "Edit domain"
+                                }
+                            ],
+                            "image": ""
+                        }
+                    },
+                    {
+                        "name": "job-1-0-1-构建发布",
+                        "display_name": "构建发布-core-api-core-api",
+                        "type": "zadig-build",
+                        "status": "failed",
+                        "start_time": 1757403006,
+                        "end_time": 1757403163,
+                        "error": "",
+                        "spec": {
+                            "repositories": [
+                                {
+                                    "source": "github",
+                                    "repo_owner": "storehubnet",
+                                    "repo_namespace": "storehubnet",
+                                    "repo_name": "core-api",
+                                    "branch": "develop",
+                                    "prs": null,
+                                    "tag": "",
+                                    "author_name": "",
+                                    "commit_id": "50bdf7f4b40ba126f6ab2d49dd3e482e49bf1079",
+                                    "commit_url": "https://github.com/storehubnet/core-api/commit/50bdf7f4",
+                                    "commit_message": "Merge pull request #587 from storehubnet/autoupdatesubmodule\n\nauto update submodule"
+                                }
+                            ],
+                            "image": ""
+                        }
+                    }
+                ],
+                "error": ""
+            }
+        ],
+        "task_creator": "hanzhang",
+        "task_creator_id": "97882c5f-a266-11ef-aa9f-02058eeea235",
+        "task_creator_phone": "13325666101",
+        "task_creator_email": "jeremy.zhang@storehub.com",
+        "task_type": "workflow"
+    }
+}`
+
+	var cb model.Callback
+	json.Unmarshal([]byte(callback), &cb)
+	log, _ := zap.NewDevelopment()
+	client := resty.New().SetRetryCount(3).SetRetryWaitTime(1 * time.Second).SetRetryMaxWaitTime(5 * time.Second)
+
+	z := NewZadig(log, client).(*zadigImpl)
+
+	_ = z.handleDeploySubEnvPassed(cb)
 }

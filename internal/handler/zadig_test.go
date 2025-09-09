@@ -228,3 +228,7 @@ func TestHandler_DeployService(t *testing.T) {
 	}
 	fmt.Println(taskId)
 }
+
+func TestZadig_GetTaskDetail(t *testing.T) {
+
+}

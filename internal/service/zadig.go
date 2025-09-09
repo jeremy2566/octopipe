@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -26,6 +27,7 @@ type Zadig interface {
 	AddService(req model.AddServiceReq) error
 	DeleteSubEnv(env string) error
 	Webhook(cb model.Callback) error
+	GetTaskDetail(workflowKey string, taskId int) (model.RespTaskDetail, error)
 }
 
 type zadigImpl struct {
@@ -33,6 +35,29 @@ type zadigImpl struct {
 	client *resty.Client
 	rdb    dao.Rdb
 	lark   Lark
+}
+
+func (z *zadigImpl) GetTaskDetail(workflowKey string, taskId int) (model.RespTaskDetail, error) {
+	ret := model.RespTaskDetail{}
+	resp, err := z.client.R().
+		SetQueryParams(map[string]string{
+			"workflowKey": workflowKey,
+			"taskId":      strconv.Itoa(taskId),
+		}).
+		SetResult(&ret).
+		Get("openapi/workflows/custom/task")
+
+	if err != nil {
+		z.log.Warn("failed to fetch workflow detail", zap.Error(err))
+		return ret, err
+	}
+	if resp.StatusCode() != http.StatusOK {
+		z.log.Warn("resp status code not ok",
+			zap.Int("status_code", resp.StatusCode()),
+			zap.String("response body", resp.String()),
+		)
+	}
+	return ret, nil
 }
 
 func (z *zadigImpl) DeleteSubEnv(env string) error {
@@ -868,6 +893,8 @@ func (z *zadigImpl) Webhook(cb model.Callback) error {
 	switch cb.Workflow.WorkflowName {
 	case "domain-monitor":
 		return z.domainMonitor(cb)
+	case "test33":
+		return z.deploySubEnv(cb)
 	default:
 		z.log.Warn("unknown workflow name, using default handler",
 			zap.String("workflow_name", cb.Workflow.WorkflowName))
@@ -893,6 +920,24 @@ func (z *zadigImpl) domainMonitor(cb model.Callback) error {
 	}
 }
 
+func (z *zadigImpl) deploySubEnv(cb model.Callback) error {
+	switch cb.Workflow.Status {
+	case "passed":
+		return z.handleDeploySubEnvPassed(cb)
+	default:
+		defaultStage := cb.Workflow.Stages[0]
+		domains := make([]string, 0)
+		for _, j := range defaultStage.Jobs {
+			displayName := j.DisplayName
+			status := j.Status
+			if status == "failed" {
+				domains = append(domains, displayName)
+			}
+		}
+		return z.handleDomainMonitorDefault(domains)
+	}
+}
+
 func (z *zadigImpl) handleDomainMonitorPassed() error {
 	req := model.SendInteractiveReq{
 		TemplateId:  "ctp_AAzXWvvEaFd5",
@@ -901,6 +946,47 @@ func (z *zadigImpl) handleDomainMonitorPassed() error {
 		Params: map[string]string{
 			"title":   "域名监控运行成功",
 			"content": "所有域名运行正常，且没有在 30 天内到期的域名，无需任何操作。",
+		},
+	}
+	return z.lark.SendInteractive(req)
+}
+
+func (z *zadigImpl) handleDeploySubEnvPassed(cb model.Callback) error {
+	totalTime := cb.Workflow.EndTime - cb.Workflow.CreateTime
+	detail, err := z.GetTaskDetail("test33", cb.Workflow.TaskID)
+	if err != nil {
+		return err
+	}
+	var subEnv string
+	for _, param := range detail.Params {
+		if param.Name == "环境" {
+			subEnv = param.Value
+		}
+	}
+	var services, branches []string
+	for _, stage := range detail.Stages {
+		if stage.Name == "构建" {
+			for _, job := range stage.Jobs {
+				services = append(services, job.JobInfo.ServiceName)
+				for _, repo := range job.Spec.Repos {
+					branches = append(branches, repo.Branch)
+				}
+			}
+		}
+	}
+	req := model.SendInteractiveReq{
+		TemplateId:  "ctp_AAz7KWuUUkkh",
+		Target:      model.User,
+		ReceiveName: cb.Workflow.TaskCreatorEmail,
+		Params: map[string]string{
+			"project_name":    cb.Workflow.ProjectName,
+			"workflow_name":   "fat-base-workflow",
+			"workflow_number": strconv.Itoa(cb.Workflow.TaskID),
+			"duration":        fmt.Sprintf("%02d:%02d", totalTime/60, totalTime%60),
+			"host":            "",
+			"sub_env":         subEnv,
+			"service":         strings.Join(services, "\n"),
+			"branch":          strings.Join(branches, "\n"),
 		},
 	}
 	return z.lark.SendInteractive(req)

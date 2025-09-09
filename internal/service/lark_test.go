@@ -150,12 +150,12 @@ func TestLarkImpl_SendInteractive_To_User_Success(t *testing.T) {
 	l := NewLark(log, client)
 
 	req := model.SendInteractiveReq{
-		TemplateId:  "ctp_AAzXWvvEaFd5",
+		TemplateId:  "ctp_AAz7KWuUUkkh",
 		Target:      model.User,
 		ReceiveName: "jeremy.zhang@storehub.com",
 		Params: map[string]string{
-			"title":   "域名监控运行成功",
-			"content": "所有域名运行正常，且没有在 30 天内到期的域名，无需任何操作。",
+			"project_name": "域名监控运行成功",
+			"content":      "所有域名运行正常，且没有在 30 天内到期的域名，无需任何操作。",
 		},
 	}
 	err := l.SendInteractive(req)

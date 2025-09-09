@@ -222,3 +222,104 @@ type Callback struct {
 		TaskType         string `json:"task_type"`
 	} `json:"workflow"`
 }
+
+type RespTaskDetail struct {
+	TaskID       int    `json:"task_id"`
+	WorkflowKey  string `json:"workflow_key"`
+	WorkflowName string `json:"workflow_name"`
+	Params       []struct {
+		Name         string      `json:"name"`
+		Description  string      `json:"description"`
+		Type         string      `json:"type"`
+		Value        string      `json:"value"`
+		Repo         interface{} `json:"repo"`
+		ChoiceOption []string    `json:"choice_option"`
+		Default      string      `json:"default"`
+		IsCredential bool        `json:"is_credential"`
+	} `json:"params"`
+	Status      string `json:"status"`
+	Reverted    bool   `json:"reverted"`
+	Remark      string `json:"remark"`
+	TaskCreator string `json:"task_creator"`
+	TaskRevoker string `json:"task_revoker"`
+	CreateTime  int    `json:"create_time"`
+	StartTime   int    `json:"start_time"`
+	EndTime     int    `json:"end_time"`
+	Stages      []struct {
+		Name       string      `json:"name"`
+		Status     string      `json:"status"`
+		StartTime  int         `json:"start_time"`
+		EndTime    int         `json:"end_time"`
+		Parallel   bool        `json:"parallel"`
+		ManualExec interface{} `json:"manual_exec"`
+		Jobs       []struct {
+			Name             string `json:"name"`
+			Key              string `json:"key"`
+			DisplayName      string `json:"display_name"`
+			OriginName       string `json:"origin_name"`
+			Type             string `json:"type"`
+			Status           string `json:"status"`
+			Reverted         bool   `json:"reverted"`
+			StartTime        int    `json:"start_time"`
+			EndTime          int    `json:"end_time"`
+			CostSeconds      int    `json:"cost_seconds"`
+			Error            string `json:"error"`
+			BreakpointBefore bool   `json:"breakpoint_before"`
+			BreakpointAfter  bool   `json:"breakpoint_after"`
+			Spec             struct {
+				Repos []struct {
+					Source        string `json:"source"`
+					RepoOwner     string `json:"repo_owner"`
+					RepoNamespace string `json:"repo_namespace"`
+					RepoName      string `json:"repo_name"`
+					RemoteName    string `json:"remote_name"`
+					Branch        string `json:"branch"`
+					EnableCommit  bool   `json:"enable_commit"`
+					CommitID      string `json:"commit_id"`
+					CommitMessage string `json:"commit_message"`
+					Hidden        bool   `json:"hidden"`
+					IsPrimary     bool   `json:"is_primary"`
+					CodehostID    int    `json:"codehost_id"`
+					OauthToken    string `json:"oauth_token"`
+					Address       string `json:"address"`
+					FilterRegexp  string `json:"filter_regexp"`
+					SourceFrom    string `json:"source_from"`
+					ParamName     string `json:"param_name"`
+					JobName       string `json:"job_name"`
+					ServiceName   string `json:"service_name"`
+					ServiceModule string `json:"service_module"`
+					RepoIndex     int    `json:"repo_index"`
+					SubmissionID  string `json:"submission_id"`
+					DisableSsl    bool   `json:"disable_ssl"`
+				} `json:"repos"`
+				Image         string `json:"image"`
+				Package       string `json:"package"`
+				ServiceName   string `json:"service_name"`
+				ServiceModule string `json:"service_module"`
+				Envs          []struct {
+					Key          string `json:"key"`
+					Value        string `json:"value"`
+					Type         string `json:"type"`
+					RegistryID   string `json:"registry_id"`
+					IsCredential bool   `json:"is_credential"`
+					Description  string `json:"description"`
+				} `json:"envs"`
+			} `json:"spec"`
+			ErrorPolicy          interface{} `json:"error_policy"`
+			ErrorHandlerUserID   string      `json:"error_handler_user_id"`
+			ErrorHandlerUsername string      `json:"error_handler_username"`
+			RetryCount           int         `json:"retry_count"`
+			JobInfo              struct {
+				JobName       string `json:"job_name"`
+				ServiceModule string `json:"service_module"`
+				ServiceName   string `json:"service_name"`
+			} `json:"job_info"`
+		} `json:"jobs"`
+		Error string `json:"error"`
+	} `json:"stages"`
+	ProjectKey       string `json:"project_key"`
+	IsRestart        bool   `json:"is_restart"`
+	Debug            bool   `json:"debug"`
+	ApprovalTicketID string `json:"approval_ticket_id"`
+	ApprovalID       string `json:"approval_id"`
+}
