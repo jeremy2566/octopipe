@@ -82,7 +82,6 @@ func (z *zadigImpl) AddService(req model.AddServiceReq) error {
 			zap.String("response body", resp.String()),
 		)
 	}
-
 	return nil
 }
 
@@ -230,8 +229,6 @@ func (z *zadigImpl) transBoV1Web(branchName string) (string, string, string, str
 		return "backoffice-v1-web-addonsjob", "backoffice-v1-web", "backoffice-v1-web", "backoffice-v1-web-addonsjob"
 	case strings.Contains(branchName, "api"):
 		return "backoffice-v1-web-api", "backoffice-v1-web", "backoffice-v1-web", "backoffice-v1-web-api-test33"
-	case strings.Contains(branchName, "app"):
-		return "backoffice-v1-web-app", "backoffice-v1-web", "backoffice-v1-web", "fat-base-envrionment-build-backoffice-v1-web-1"
 	case strings.Contains(branchName, "exportjob"):
 		return "backoffice-v1-web-exportjob", "backoffice-v1-web-exportjob", "backoffice-v1-web", "fat-base-envrionment-build-backoffice-v1-web-exportjob"
 	case strings.Contains(branchName, "importjob"):
@@ -242,11 +239,10 @@ func (z *zadigImpl) transBoV1Web(branchName string) (string, string, string, str
 		return "backoffice-v1-web-qbojob", "backoffice-v1-web", "backoffice-v1-web", "fat-base-envrionment-build-backoffice-v1-web-1"
 	case strings.Contains(branchName, "running"):
 		return "backoffice-v1-web-runningjob", "backoffice-v1-web", "backoffice-v1-web", "backoffice-v1-web-runningjob-test33"
-	case strings.Contains(branchName, ""):
+	case strings.Contains(branchName, "scheduledjob"):
 		return "backoffice-v1-web-scheduledjob", "backoffice-v1-web", "backoffice-v1-web", "backoffice-v1-web-schedule-job"
 	default:
-		z.log.Warn("unknown branch name", zap.String("branchName", branchName))
-		return "", "", "", ""
+		return "backoffice-v1-web-app", "backoffice-v1-web", "backoffice-v1-web", "fat-base-envrionment-build-backoffice-v1-web-1"
 	}
 }
 
@@ -885,7 +881,7 @@ func (z *zadigImpl) domainMonitor(cb model.Callback) error {
 		return z.handleDomainMonitorPassed()
 	default:
 		defaultStage := cb.Workflow.Stages[0]
-		domains := make([]string, len(defaultStage.Jobs))
+		domains := make([]string, 0)
 		for _, j := range defaultStage.Jobs {
 			displayName := j.DisplayName
 			status := j.Status
@@ -918,7 +914,7 @@ func (z *zadigImpl) handleDomainMonitorDefault(domains []string) error {
 	req := model.SendInteractiveReq{
 		TemplateId:  "ctp_AAzXaSRdmtsX",
 		Target:      model.Group,
-		ReceiveName: "Devops Notification",
+		ReceiveName: "Engineering Incident Report Group",
 		Params: map[string]string{
 			"title":   "域名即将过期提醒",
 			"content": content,

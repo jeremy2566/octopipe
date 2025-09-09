@@ -1,8 +1,8 @@
 package service
 
 import (
+	"encoding/json"
 	"fmt"
-	"strings"
 	"testing"
 	"time"
 
@@ -92,8 +92,126 @@ func TestZadigImpl_GetServiceCharts(t *testing.T) {
 	}
 }
 
-func TestName(t *testing.T) {
-	branch := "feature/INF-333"
-	split := strings.Split(branch, "/")
-	println(split[len(split)-1])
+func TestZadigImpl_Webhook01(t *testing.T) {
+	callback := `{
+    "object_kind": "workflow",
+    "event": "workflow",
+    "workflow": {
+        "task_id": 61,
+        "project_name": "devops-tools",
+        "project_display_name": "DevOps_Tools",
+        "workflow_name": "domain-monitor",
+        "workflow_display_name": "domain-monitor",
+        "status": "failed",
+        "remark": "",
+        "detail_url": "http://zadigx.shub.us/v1/projects/detail/devops-tools/pipelines/custom/domain-monitor?display_name=domain-monitor",
+        "error": "",
+        "create_time": 1757387902,
+        "start_time": 1757387904,
+        "end_time": 1757387968,
+        "stages": [
+            {
+                "name": "default",
+                "status": "failed",
+                "start_time": 1757387904,
+                "end_time": 1757387968,
+                "jobs": [
+                    {
+                        "name": "job-0-0-0-shub-us",
+                        "display_name": "shub-us",
+                        "type": "freestyle",
+                        "status": "failed",
+                        "start_time": 1757387904,
+                        "end_time": 1757387909,
+                        "error": "waitJobStart: pod failed, jobName:domain-monitor-61-krkw2, podName:domain-monitor-61-krkw2-7d4xt\nconditions info: type:PodReadyToStartContainers, status:False, reason:, message:\ntype:Initialized, status:True, reason:, message:\ntype:Ready, status:False, reason:PodFailed, message:\ntype:ContainersReady, status:False, reason:PodFailed, message:\ntype:PodScheduled, status:True, reason:, message:\n",
+                        "spec": {
+                            "repositories": null,
+                            "image": ""
+                        }
+                    },
+                    {
+                        "name": "job-0-1-0-storehubhq-com",
+                        "display_name": "storehubhq-com",
+                        "type": "freestyle",
+                        "status": "passed",
+                        "start_time": 1757387904,
+                        "end_time": 1757387925,
+                        "error": "",
+                        "spec": {
+                            "repositories": null,
+                            "image": ""
+                        }
+                    },
+                    {
+                        "name": "job-0-2-0-bpit-me",
+                        "display_name": "bpit-me",
+                        "type": "freestyle",
+                        "status": "failed",
+                        "start_time": 1757387904,
+                        "end_time": 1757387908,
+                        "error": "waitJobStart: pod failed, jobName:domain-monitor-61-lvskg, podName:domain-monitor-61-lvskg-9x89c\nconditions info: type:PodReadyToStartContainers, status:False, reason:, message:\ntype:Initialized, status:True, reason:, message:\ntype:Ready, status:False, reason:PodFailed, message:\ntype:ContainersReady, status:False, reason:PodFailed, message:\ntype:PodScheduled, status:True, reason:, message:\n",
+                        "spec": {
+                            "repositories": null,
+                            "image": ""
+                        }
+                    },
+                    {
+                        "name": "job-0-3-0-mymyhub-com",
+                        "display_name": "mymyhub-com",
+                        "type": "freestyle",
+                        "status": "passed",
+                        "start_time": 1757387904,
+                        "end_time": 1757387968,
+                        "error": "",
+                        "spec": {
+                            "repositories": null,
+                            "image": ""
+                        }
+                    },
+                    {
+                        "name": "job-0-4-0-beepit-com",
+                        "display_name": "beepit-com",
+                        "type": "freestyle",
+                        "status": "passed",
+                        "start_time": 1757387904,
+                        "end_time": 1757387960,
+                        "error": "",
+                        "spec": {
+                            "repositories": null,
+                            "image": ""
+                        }
+                    },
+                    {
+                        "name": "job-0-5-0-storehub-com",
+                        "display_name": "storehub-com",
+                        "type": "freestyle",
+                        "status": "passed",
+                        "start_time": 1757387904,
+                        "end_time": 1757387954,
+                        "error": "",
+                        "spec": {
+                            "repositories": null,
+                            "image": ""
+                        }
+                    }
+                ],
+                "error": ""
+            }
+        ],
+        "task_creator": "hanzhang",
+        "task_creator_id": "97882c5f-a266-11ef-aa9f-02058eeea235",
+        "task_creator_phone": "13325666101",
+        "task_creator_email": "jeremy.zhang@storehub.com",
+        "task_type": "workflow"
+    }
+}`
+	var cb model.Callback
+	json.Unmarshal([]byte(callback), &cb)
+	log, _ := zap.NewDevelopment()
+	client := resty.New().SetRetryCount(3).SetRetryWaitTime(1 * time.Second).SetRetryMaxWaitTime(5 * time.Second)
+
+	z := NewZadig(log, client).(*zadigImpl)
+
+	_ = z.Webhook(cb)
+
 }
